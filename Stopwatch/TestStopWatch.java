@@ -1,8 +1,13 @@
+/* Test Stopwatch class 
+ * Program will calculated elapsed time to fill array with 100000 random numbers
+ */
+
 package stopwatch;
 
 import java.util.Random;
 
 public class TestStopWatch {
+
 	public static void main(String[] args) {
 		Stopwatch Time = new Stopwatch();
 		int [] testArray = new int [100000];
