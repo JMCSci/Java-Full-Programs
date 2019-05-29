@@ -7,10 +7,10 @@ public class Fan {
 	final int SLOW = 1;
 	final int MEDIUM = 2;
 	final int FAST = 3;
-	private int speed;	    // specifies speed of fan (default is "slow")
-	private Boolean on;     // true specifies fan is on, false specifies off (default is "false")
-	private double radius;  // specifies radius of the fan (default is "5")
-	public String color;    // specifies color of fan (default is "blue")
+	private int speed;	 // specifies speed of fan (default is "slow")
+	private Boolean on;      // true specifies fan is on, false specifies off (default is "false")
+	private double radius;   // specifies radius of the fan (default is "5")
+	public String color;     // specifies color of fan (default is "blue")
 
 // constructor -- creates default fan 
 	Fan() {
