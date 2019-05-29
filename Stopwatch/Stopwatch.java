@@ -1,4 +1,4 @@
-/* Stopwatch program */
+/* Stopwatch class */
 
 package stopwatch;
 
