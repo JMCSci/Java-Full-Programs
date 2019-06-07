@@ -14,6 +14,7 @@ public class ATM {
 	public static void main(String[] args) {
 		Scanner input = new Scanner(System.in);
 		Account atm = new Account();
+		Account date = new Account();
 		int option, PIN;
 		
 	// create 10 "accounts" in an array w/ ID 0-9; initial balance of $100
@@ -72,10 +73,12 @@ public class ATM {
 		case 1: System.out.println("Balance: $" + bankAccountsBal[atm.getId()]); break;
 		case 2: System.out.println("Enter an amount to withdraw: ");
 				bankAccountsBal[atm.getId()] = atm.withdraw(input.nextDouble());
-				System.out.println("Balance: $" + bankAccountsBal[atm.getId()]); break;
+				System.out.println("Balance: $" + bankAccountsBal[atm.getId()]);
+				System.out.println("Transaction complete: " + date.dateCreated()); break;
 		case 3: System.out.println("Enter an amount to deposit: ");
 				bankAccountsBal[atm.getId()] = atm.deposit(input.nextDouble());
-				System.out.println("New balance: $" + bankAccountsBal[atm.getId()]); break;
+				System.out.println("New balance: $" + bankAccountsBal[atm.getId()]); 
+				System.out.println("Transaction complete: " + date.dateCreated()); break;
 		case 4: System.out.println("\nGoodbye"); break;
 		default: System.out.println("Invalid selection."); break;
 		}
