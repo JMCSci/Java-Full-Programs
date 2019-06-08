@@ -9,9 +9,11 @@
 package account;
 
 import java.util.Scanner;
+import account.Account;
 
 public class ATM {
 	public static void main(String[] args) {
+		@SuppressWarnings("resource")
 		Scanner input = new Scanner(System.in);
 		Account atm = new Account();
 		Account date = new Account();
@@ -32,7 +34,16 @@ public class ATM {
 	
 	// prompt user to enter ID number; if number does match "account #", asks user to enter correct number 
 	System.out.print("Enter an ID: ");
-	atm.setId(input.nextInt());
+	
+	// checks user input is an integer not a string
+	while(true) {
+	if(!input.hasNextInt()) {
+		System.out.print("Please enter a valid number: "); 
+		input.next(); continue;
+	} else {
+		atm.setId(input.nextInt()); break;
+	   }
+	}
 	
 	// check ID number
 	while(true) {
@@ -41,7 +52,7 @@ public class ATM {
 		System.out.print("Enter an ID: ");
 		atm.setId(input.nextInt());
 		continue;
-	  } 
+	  }
 	break;
    }
 	
@@ -84,7 +95,14 @@ public class ATM {
 		}
 		// start new loop
 		System.out.println("\nEnter an ID: ");
-		atm.setId(input.nextInt());
+		while(true) {
+			if(!input.hasNextInt()) {
+				System.out.print("Please enter a valid number: "); 
+				input.next(); continue;
+			} else {
+				atm.setId(input.nextInt()); break;
+			   }
+			}
 		
 		// check ID number 
 		while(true) {
