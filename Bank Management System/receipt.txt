@@ -1,0 +1,7 @@
+ 
+Type: T
+Amount: 20.0
+Balance: 180.0
+Description: Savings transfer to Checking
+Date: Thu Aug 08 18:27:51 EDT 2019
+ 
