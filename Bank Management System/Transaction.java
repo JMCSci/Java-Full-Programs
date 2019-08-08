@@ -4,7 +4,7 @@ My/* Transaction class
 package bank;
 
 public class Transaction extends Account {
-	private char type;									// type of transaction ('W' for withdrawal, 'D' for deposit)
+	private char type;								// type of transaction ('W' for withdrawal, 'D' for deposit)
 	private double amount; 								// amount of this transaction
 	private double balance;								// new balance after this transaction
 	private String description;							// description of this transcription
