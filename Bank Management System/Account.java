@@ -8,11 +8,11 @@ import java.util.ArrayList;
 // blueprint
 public class Account {
 	private int id;						// default (0)
-	private double balance;				// default (0)
-	private double annualInterestRate;	// stores current interest rate (default 0)
-	private Date dateCreated;			// stores the date when account was created
-	private String firstName;			// stores the first name of the customer
-	private String lastName;			// stores the last name of the customer
+	private double balance;					// default (0)
+	private double annualInterestRate;			// stores current interest rate (default 0)
+	private Date dateCreated;				// stores the date when account was created
+	private String firstName;				// stores the first name of the customer
+	private String lastName;				// stores the last name of the customer
 	private ArrayList <Object> transactions = new ArrayList<>(); 
 	
 // constructor -- default account 
