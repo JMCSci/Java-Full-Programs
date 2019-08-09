@@ -22,8 +22,7 @@ Created by: Jason Moreau
 
 * Program has been debugged and will not crash due to logic errors 
 
-
-Main method is located in Bank.java
+* Main method located in Bank.java
 
 
 
