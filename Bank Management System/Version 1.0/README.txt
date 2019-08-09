@@ -1,5 +1,7 @@
-/* Project: Java Bank Management System v.1
- * Created by: Jason Moreau
+Project: Java Bank Management System v.1
+Created by: Jason Moreau
+ 
+Program models services provided by a typical commercial bank. This program utilizes an object oriented design approach      and tracks checking accounts, savings accounts, interest rates and all associated personal identification numbers.
 
  * Utilizes methods and constructors from Account, CheckingAccount, SavingsAccount and Transaction classes
  * Accounts saved in ArrayList objects
