@@ -1,4 +1,4 @@
-My/* Transaction class
+/* Transaction class
  */
 
 package bank;
