@@ -1,7 +1,7 @@
 # Chat Application 1.0
 
-Version 1.0 of Chat Application. 
+This application allows multiple users to communicate over a network. 
 
-Runs from the command line.
+Program runs from the command line.
 
 
