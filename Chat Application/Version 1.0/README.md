@@ -2,6 +2,6 @@
 
 This application allows multiple users to communicate over a network. 
 
-Program runs from the command line.
+Client and Server applications run from the command line.
 
 
