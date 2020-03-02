@@ -1,3 +1,5 @@
-## Chat Application Version 2.0
+# Chat Application Version 2.0
 
-This version includes a client side GUI. 
+This updated version includes a client side GUI. 
+
+Server runs from the command line.
