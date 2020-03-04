@@ -7,39 +7,28 @@ package chatapp;
 import javafx.scene.layout.GridPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Label;
-
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;
-import java.util.Scanner;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.rmi.UnknownHostException;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import java.util.Queue;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Iterator;
 
 public class Client extends Application { 
 	static String serverIP = "";
@@ -60,7 +49,6 @@ public class Client extends Application {
 	static ClientRequest request = null;
 	static Runnable runnable1 = null;
 	static Thread thread1 = null;
-	static Message msg = new Message();
 
 	
 	public static void main(String[] args) throws Exception, InvocationTargetException {
@@ -68,7 +56,7 @@ public class Client extends Application {
 	
 	}
 	
-//Start GUI
+	/* start: Create GUI and events */
 	public void start(Stage primaryStage) throws Exception {
 		GridPane pane = new GridPane();
 		pane.setVgap(5);
@@ -107,27 +95,31 @@ public class Client extends Application {
 		bpane.setBottom(hbox1);
 		bpane.setStyle("-fx-background-color:gray;");
 		
-		byte [] textMsg = new byte [256];
 		
-		Stage stage2 = new Stage();
-		Scene scene2 = new Scene(pane, 250, 100, Color.BLACK);
-		stage2.setScene(scene2);
-		stage2.setTitle("Connect to Server");
-		stage2.setResizable(true);
-		stage2.setX(550);
-		stage2.setY(80);
-		stage2.show();
+		// Show "Connect to Server" window
+		Stage connectStage = new Stage();
+		Scene scene1 = new Scene(pane, 250, 100, Color.BLACK);
+		connectStage.setScene(scene1);
+		connectStage.setTitle("Connect to Server");
+		connectStage.setResizable(true);
+		connectStage.setX(550);
+		connectStage.setY(80);
+		connectStage.show();
 		
 		// Show Chat window
-		Scene scene1 = new Scene(bpane, 635, 300, Color.BLACK);
-		primaryStage.setScene(scene1);
+		Scene scene2 = new Scene(bpane, 635, 300, Color.BLACK);
+		primaryStage.setScene(scene2);
 		primaryStage.setTitle("Chat Application");
 		primaryStage.setResizable(false);
 		
-		/* Second stage */
 		
 		// EVENT -- Connect to server  
-		connect.setOnAction(e ->{
+		// Packet to be sent (contains all information)
+		// Empty byte array because this datagram packet is simply a request to the server for information. 
+		// All the server needs to know to send a response--the address and port number to which reply
+		// This is automatically part of the packet.
+		// Separate thread for receiving messages from server
+		connect.setOnAction(e -> {
 			try {
 				serverIP = tf2.getText();
 				name = tf3.getText();
@@ -139,83 +131,75 @@ public class Client extends Application {
 				sock = socket;
 				dataout = out;
 				myIP = socket.getLocalSocketAddress().toString();	
-				
 				dataout.writeUTF(myIP);
-				
 				dataout.writeUTF(name);	
-				
 				DataInputStream in = new DataInputStream(socket.getInputStream());
 				datain = in;
-				
-				// check socket connection
+				// Check if client socket has connected to server
 				socketConnect(sock);
 				
 				if(connected == true) { 
-					stage2.hide();				// Close Server window
-					primaryStage.show();		// Show Chat window
+					connectStage.hide();				// Hide Server window
+					primaryStage.show();				// Show Chat window
 				}
-			
 			} catch (Exception e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			
 		});
 		
-		ClientRequest clientReq = new ClientRequest(serverIP, textBroadcast, textarea, sock);
+		// EVENT -- Send a message
+				send.setOnAction(e ->{
+					message = tf.getText();
+					tf.setText("");
+					convertMessage();
+					message = "";			// Clear it from string
+					try {
+						dataout.write(clientMessage);
+
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+				});
 		
+		// EVENT: Exit session 
+				primaryStage.setOnCloseRequest(e -> {
+					connectStage.close();
+					System.exit(1);
+				});
+		
+		// Create ClientRequest object -- used to start a server request thread
+		ClientRequest clientReq = new ClientRequest(serverIP, textBroadcast, textarea, sock);
 		Runnable runnable = (Runnable)clientReq;
 		Thread thread = new Thread(runnable);
 		thread1 = thread;
 		thread.start();
-
-		// EVENT -- Send message
-		send.setOnAction(e ->{
-			message = tf.getText();
-			tf.setText("");
-			convertMessage();
-			message = "";			// Clear it
-			try {
-				dataout.write(clientMessage);
-
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-		});
 	}
-	
-public static void connect() throws Exception {
-	// Packet to be sent (contains all information)
-	// Empty byte array because this datagram packet is simply a request to the server for information. 
-	// All the server needs to know to send a response--the address and port number to which reply
-	// This is automatically part of the packet.
-	// Separate thread for receiving messages from server
-}
 
-public static void convertMessage() {
-	message = name + ": " + message;
-	// Convert to bytes for transmission
-	clientMessage = message.getBytes();
-}
-
-public static void socketConnect(Socket socket) {
-	if(socket.isConnected()) {
-		connected = true;
-	} else {
-		connected = false;
+	/* convertMessge: Converts String into a byte array for transmission */
+	public static void convertMessage() {
+		message = name + ": " + message;
+		// Convert to bytes for transmission
+		clientMessage = message.getBytes();
 	}
+
+	/* socketConnect: Check to see if client socket is connected to server */
+	public static void socketConnect(Socket socket) {
+		if(socket.isConnected()) {
+			connected = true;
+		} else {
+			connected = false;
+		}
 	
-}
+	}
 
 }
 
-//Create a separate thread for server requests
+/* ClientRequest: Handles server requests */
 class ClientRequest implements Runnable {
 	byte[] packet = new byte [256]; 
 	String serverIP = null;
 	String textBroadcast = "";
-	Message msg = null;
 	byte[] text = new byte [256]; 
 	DataInputStream input = null;
 	DataOutputStream request = null;
@@ -235,7 +219,7 @@ class ClientRequest implements Runnable {
 				MulticastSocket socket = new MulticastSocket(4446);
 				InetAddress group = InetAddress.getByName("230.0.0.0");
 				socket.joinGroup(group);
-				socket.setSoTimeout(30000);		// time out after 30 seconds
+				socket.setSoTimeout(30000);		// client socket timeout after 30 seconds
 				// Package packet
 				DatagramPacket clientPacket = new DatagramPacket(packet, packet.length);
 				// Receive packet from server
@@ -259,6 +243,7 @@ class ClientRequest implements Runnable {
 			}	
 	}
 	
+	/* clear: Clears byte array */
 	public void clear() {
 		for(int i = 0; i < packet.length; i++) {
 			packet[i] = 0;
@@ -270,9 +255,6 @@ class ClientRequest implements Runnable {
 		return textBroadcast;
 	}
 	
-	public String getTextMessage() {
-		return msg.getMessage();
-	}
 	
 	public void disconnect(Socket sock) throws IOException {
 		sock.close();
@@ -280,37 +262,4 @@ class ClientRequest implements Runnable {
 	
 }
 
-
-
-class Message {
-	ArrayList<String> allMessages = new ArrayList<>();
-	static String message = "";
-	
-	Message(String message) {
-		allMessages.add(message);
-	}
-	
-	Message() {
-		
-	}
-
-	// Add all messages to list -- used in TextArea display
-		public void addMessages(String messages) {
-			allMessages.add(messages);
-			System.out.println(allMessages.get(0));
-		}
-	
-		public void addMessage(String text) {
-			message = text;
-		}
-		
-		public String getMessage() {
-			return message;
-		}
-		
-		public String getMessages() {
-			return allMessages.get(0);
-		}
-	
-}
 
