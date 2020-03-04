@@ -4,4 +4,4 @@ This updated version includes a client side GUI.
 
 Server runs from the command line.
 
-IN PROGRESS -- 03/02/20
+IN PROGRESS -- 03/04/20
