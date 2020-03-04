@@ -1,5 +1,5 @@
 /* ChatApp class for Chat Application
- * Starts GUI
+ * Client side GUI and events
  */
 
 package chatapp;
@@ -29,6 +29,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import java.util.Queue;
 import java.util.ArrayDeque;
+import java.net.SocketTimeoutException;
 
 public class Client extends Application { 
 	static String serverIP = "";
@@ -39,7 +40,6 @@ public class Client extends Application {
 	static boolean ready = false;
 	static String name = "";
 	static boolean connected = false;
-	static String textBroadcast = "";
 	static Queue<String> queue = new ArrayDeque<String>();
 	static Socket sock = null;
 	static DataOutputStream dataout = null;			
@@ -126,7 +126,6 @@ public class Client extends Application {
 				if(!serverIP.isEmpty() && !name.isEmpty())
 					textarea.setText("");
 				Socket socket = new Socket(serverIP, 5000);
-				socket.setSoTimeout(10000);
 				DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 				sock = socket;
 				dataout = out;
@@ -149,27 +148,32 @@ public class Client extends Application {
 		});
 		
 		// EVENT -- Send a message
-				send.setOnAction(e ->{
-					message = tf.getText();
-					tf.setText("");
-					convertMessage();
-					message = "";			// Clear it from string
-					try {
-						dataout.write(clientMessage);
-
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					}
-				});
+		send.setOnAction(e ->{
+			message = tf.getText();
+			tf.setText("");
+			convertMessage();
+			message = "";						// Clear message from string
+				try {
+					dataout.write(clientMessage);
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+		});
 		
-		// EVENT: Exit session 
-				primaryStage.setOnCloseRequest(e -> {
-					connectStage.close();
-					System.exit(1);
-				});
+		// EVENT: Exit Chat window  
+		primaryStage.setOnCloseRequest(e -> {
+			connectStage.close();
+			System.exit(-1);
+		});
+		
+		// EVENT: Exit "Connect to Server" window
+		connectStage.setOnCloseRequest(e -> {
+			primaryStage.close();
+			System.exit(-1);
+		});
 		
 		// Create ClientRequest object -- used to start a server request thread
-		ClientRequest clientReq = new ClientRequest(serverIP, textBroadcast, textarea, sock);
+		ClientRequest clientReq = new ClientRequest(serverIP, textarea, tf, sock);
 		Runnable runnable = (Runnable)clientReq;
 		Thread thread = new Thread(runnable);
 		thread1 = thread;
@@ -199,18 +203,19 @@ public class Client extends Application {
 class ClientRequest implements Runnable {
 	byte[] packet = new byte [256]; 
 	String serverIP = null;
-	String textBroadcast = "";
 	byte[] text = new byte [256]; 
 	DataInputStream input = null;
 	DataOutputStream request = null;
 	TextArea textarea = null;
+	TextField textField = null;
+	
 	Socket sock = null;
 	
-	ClientRequest(String serverIP, String broadcast, TextArea textarea, Socket sock) throws Exception, SocketException, UnknownHostException {
+	ClientRequest(String serverIP, TextArea textarea, TextField textField, Socket sock) throws Exception, SocketTimeoutException, SocketException, UnknownHostException {
 		this.serverIP = serverIP;
-		textBroadcast = broadcast;
 		this.textarea = textarea;
 		this.sock = sock;
+		this.textField = textField;
 	}
 	
 	public void run() {	
@@ -219,16 +224,13 @@ class ClientRequest implements Runnable {
 				MulticastSocket socket = new MulticastSocket(4446);
 				InetAddress group = InetAddress.getByName("230.0.0.0");
 				socket.joinGroup(group);
-				socket.setSoTimeout(30000);		// client socket timeout after 30 seconds
 				// Package packet
 				DatagramPacket clientPacket = new DatagramPacket(packet, packet.length);
 				// Receive packet from server
 				socket.receive(clientPacket);
 				// Convert byte array into a String
 				String serverText = new String(clientPacket.getData());
-				/* WOULD IT BE MORE EFFICIENT TO USE A DATA STRUCTURE? */
-				textBroadcast += serverText + "\n";
-				textarea.setText(textBroadcast);
+				textarea.appendText(serverText + "\n");
 				/* Close socket if user quits */
 				clear();
 				socket.close();
@@ -239,8 +241,12 @@ class ClientRequest implements Runnable {
 			} catch(UnknownHostException ex) {
 				ex.printStackTrace();
 			} catch(IOException ex) {
-				ex.printStackTrace();
-			}	
+				/* Timeout exception if timeout is being used */
+				textarea.appendText("\n*** You have exceeded the inactivity limit ***");
+				textarea.appendText("\n*** Please exit the program and reconnect ***");
+				textField.setText("");								// Clear textfield
+				textField.setEditable(false);						// Make disable TextField and force user to quit program
+			}
 	}
 	
 	/* clear: Clears byte array */
@@ -250,12 +256,7 @@ class ClientRequest implements Runnable {
 		}
 	
 	}
-	
-	public String getText() {
-		return textBroadcast;
-	}
-	
-	
+		
 	public void disconnect(Socket sock) throws IOException {
 		sock.close();
 	}
