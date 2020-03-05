@@ -4,6 +4,7 @@
 
 package chatapp;
 
+import javafx.geometry.Insets;
 import javafx.scene.layout.GridPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Label;
@@ -14,10 +15,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.rmi.UnknownHostException;
 import javafx.application.Application;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -30,6 +33,8 @@ import javafx.stage.Stage;
 import java.util.Queue;
 import java.util.ArrayDeque;
 import java.net.SocketTimeoutException;
+import javafx.scene.control.ToolBar;
+import javafx.scene.layout.StackPane;
 
 public class Client extends Application { 
 	static String serverIP = "";
@@ -40,7 +45,6 @@ public class Client extends Application {
 	static boolean ready = false;
 	static String name = "";
 	static boolean connected = false;
-	static Queue<String> queue = new ArrayDeque<String>();
 	static Socket sock = null;
 	static DataOutputStream dataout = null;			
 	static DataInputStream datain = null;
@@ -58,11 +62,24 @@ public class Client extends Application {
 	
 	/* start: Create GUI and events */
 	public void start(Stage primaryStage) throws Exception {
+		/*
+		 * 
+		 * CONNECT TO SERVER WINDOW
+		 * 
+		 */
+		
+		StackPane root = new StackPane();
+		
+		HBox hbox = new HBox(10);
+		hbox.setAlignment(Pos.BASELINE_CENTER);
+		
 		GridPane pane = new GridPane();
 		pane.setVgap(5);
 		pane.setHgap(10);
-		TextField tf2 = new TextField();
-		TextField tf3 = new TextField();
+
+		TextField tf2 = new TextField();				// IP address
+		TextField tf3 = new TextField();				// User name
+		tf3.setPrefWidth(250);
 		Label lb1 = new Label("IP Address");
 		Label lb2 = new Label("Username");
 		Button connect = new Button("Connect");
@@ -72,6 +89,20 @@ public class Client extends Application {
 		pane.add(lb2, 0, 1);
 		pane.add(tf3, 1, 1);
 		pane.add(connect, 1, 2);
+		GridPane.setHalignment(connect, HPos.CENTER);
+		GridPane.setHalignment(lb1, HPos.LEFT);
+		GridPane.setHalignment(lb2, HPos.LEFT);
+		GridPane.setHalignment(tf2, HPos.LEFT);
+		GridPane.setHalignment(tf3, HPos.LEFT);
+		pane.setPadding(new Insets(20,50,10,25));
+		
+		root.getChildren().addAll(hbox, pane);
+
+		/*
+		 * 
+		 * CHAT APP WINDOW
+		 * 
+		 */
 		
 		BorderPane bpane = new BorderPane();
 		
@@ -95,15 +126,12 @@ public class Client extends Application {
 		bpane.setBottom(hbox1);
 		bpane.setStyle("-fx-background-color:gray;");
 		
-		
 		// Show "Connect to Server" window
 		Stage connectStage = new Stage();
-		Scene scene1 = new Scene(pane, 250, 100, Color.BLACK);
+		Scene scene1 = new Scene(root, 430, 135, Color.BLACK);
 		connectStage.setScene(scene1);
 		connectStage.setTitle("Connect to Server");
 		connectStage.setResizable(true);
-		connectStage.setX(550);
-		connectStage.setY(80);
 		connectStage.show();
 		
 		// Show Chat window
@@ -113,6 +141,12 @@ public class Client extends Application {
 		primaryStage.setResizable(false);
 		
 		
+		/* 
+		 * 
+		 * EVENTS
+		 * 
+		 */
+		
 		// EVENT -- Connect to server  
 		// Packet to be sent (contains all information)
 		// Empty byte array because this datagram packet is simply a request to the server for information. 
@@ -120,30 +154,48 @@ public class Client extends Application {
 		// This is automatically part of the packet.
 		// Separate thread for receiving messages from server
 		connect.setOnAction(e -> {
+			hbox.getChildren().clear();
 			try {
 				serverIP = tf2.getText();
 				name = tf3.getText();
-				if(!serverIP.isEmpty() && !name.isEmpty())
-					textarea.setText("");
-				Socket socket = new Socket(serverIP, 5000);
-				DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-				sock = socket;
-				dataout = out;
-				myIP = socket.getLocalSocketAddress().toString();	
-				dataout.writeUTF(myIP);
-				dataout.writeUTF(name);	
-				DataInputStream in = new DataInputStream(socket.getInputStream());
-				datain = in;
-				// Check if client socket has connected to server
-				socketConnect(sock);
+				if(serverIP.isBlank()|| name.isBlank()) {
+					/* SET TEXT IN SERVER WINDOW -- LABEL (RED) */
+					Label lb4 = new Label("Please enter a valid IP Address and User Name");
+					lb4.setTextFill(Color.RED);
+					hbox.getChildren().add(lb4);
+					
+				} else {	
+					hbox.getChildren().clear();
+					// Socket will stop searching after 5 seconds
+					int timeout = 5000;
+					Socket socket = new Socket();
+					InetSocketAddress inetSocketAddress = new InetSocketAddress(serverIP, 5000);
+					socket.connect(inetSocketAddress, timeout);
+					DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 				
-				if(connected == true) { 
-					connectStage.hide();				// Hide Server window
-					primaryStage.show();				// Show Chat window
+					sock = socket;
+					dataout = out;
+					myIP = socket.getLocalSocketAddress().toString();	
+					dataout.writeUTF(myIP);
+					dataout.writeUTF(name);	
+					DataInputStream in = new DataInputStream(socket.getInputStream());
+					datain = in;
+					// Check if client socket has connected to server
+					socketConnect(sock);
+					
+					if(connected == true) { 
+						connectStage.hide();				// Hide Server window
+						primaryStage.show();				// Show Chat window
+					}
+					
 				}
 			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
+				/* Handles NoRouteToHostException */
+				hbox.getChildren().clear();
+				Label lb4 = new Label("Host cannot be reached");
+				lb4.setTextFill(Color.RED);
+				hbox.getChildren().add(lb4);
+			} 
 			
 		});
 		
@@ -152,7 +204,8 @@ public class Client extends Application {
 			message = tf.getText();
 			tf.setText("");
 			convertMessage();
-			message = "";						// Clear message from string
+			// Clear message from string
+			message = "";						
 				try {
 					dataout.write(clientMessage);
 				} catch (IOException e1) {
@@ -172,6 +225,12 @@ public class Client extends Application {
 			System.exit(-1);
 		});
 		
+		/*
+		 * 
+		 *  SERVER THREAD
+		 * 
+		 */
+				
 		// Create ClientRequest object -- used to start a server request thread
 		ClientRequest clientReq = new ClientRequest(serverIP, textarea, tf, sock);
 		Runnable runnable = (Runnable)clientReq;
@@ -208,7 +267,6 @@ class ClientRequest implements Runnable {
 	DataOutputStream request = null;
 	TextArea textarea = null;
 	TextField textField = null;
-	
 	Socket sock = null;
 	
 	ClientRequest(String serverIP, TextArea textarea, TextField textField, Socket sock) throws Exception, SocketTimeoutException, SocketException, UnknownHostException {
@@ -244,8 +302,14 @@ class ClientRequest implements Runnable {
 				/* Timeout exception if timeout is being used */
 				textarea.appendText("\n*** You have exceeded the inactivity limit ***");
 				textarea.appendText("\n*** Please exit the program and reconnect ***");
-				textField.setText("");								// Clear textfield
+				textField.setText("");							// Clear textfield
 				textField.setEditable(false);						// Make disable TextField and force user to quit program
+				try {
+					disconnect();
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch(NullPointerException e) {					
+				}
 			}
 	}
 	
@@ -257,7 +321,7 @@ class ClientRequest implements Runnable {
 	
 	}
 		
-	public void disconnect(Socket sock) throws IOException {
+	public void disconnect() throws IOException {
 		sock.close();
 	}
 	
