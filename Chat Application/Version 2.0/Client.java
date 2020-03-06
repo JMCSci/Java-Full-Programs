@@ -4,68 +4,62 @@
 
 package chatapp;
 
+import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.geometry.HPos;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.layout.GridPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Label;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
+import javafx.scene.layout.StackPane;
+import javafx.scene.control.ToolBar;
+import javafx.stage.Stage;
+import java.lang.reflect.InvocationTargetException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
-import java.rmi.UnknownHostException;
-import javafx.application.Application;
-import javafx.geometry.HPos;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.TextArea;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.paint.Color;
-import javafx.stage.Stage;
-import java.util.Queue;
-import java.util.ArrayDeque;
 import java.net.SocketTimeoutException;
-import javafx.scene.control.ToolBar;
-import javafx.scene.layout.StackPane;
+import java.rmi.UnknownHostException;
+import java.util.ArrayList;
 
 public class Client extends Application { 
-	static String serverIP = "";
-	static String myIP = "";
 	static byte [] packet = new byte [256]; 	
 	static byte [] clientMessage = new byte [256];
-	static String message = "";
 	static boolean ready = false;
-	static String name = "";
 	static boolean connected = false;
+	boolean running = false;
+	static String serverIP = "";
+	static String myIP = "";
+	static String message = "";
+	static String name = "";
+	static String text = "";
 	static Socket sock = null;
 	static DataOutputStream dataout = null;			
 	static DataInputStream datain = null;
-	static String text = "";
-	boolean running = false;
 	static ClientRequest request = null;
 	static Runnable runnable1 = null;
 	static Thread thread1 = null;
 
-	
 	public static void main(String[] args) throws Exception, InvocationTargetException {
 		Application.launch(args);
-	
 	}
 	
 	/* start: Create GUI and events */
 	public void start(Stage primaryStage) throws Exception {
 		/*
-		 * 
 		 * CONNECT TO SERVER WINDOW
-		 * 
 		 */
 		
 		StackPane root = new StackPane();
@@ -77,8 +71,8 @@ public class Client extends Application {
 		pane.setVgap(5);
 		pane.setHgap(10);
 
-		TextField tf2 = new TextField();				// IP address
-		TextField tf3 = new TextField();				// User name
+		TextField tf2 = new TextField();				// IP Address
+		TextField tf3 = new TextField();				// User Name
 		tf3.setPrefWidth(250);
 		Label lb1 = new Label("IP Address");
 		Label lb2 = new Label("Username");
@@ -99,9 +93,7 @@ public class Client extends Application {
 		root.getChildren().addAll(hbox, pane);
 
 		/*
-		 * 
 		 * CHAT APP WINDOW
-		 * 
 		 */
 		
 		BorderPane bpane = new BorderPane();
@@ -142,9 +134,7 @@ public class Client extends Application {
 		
 		
 		/* 
-		 * 
 		 * EVENTS
-		 * 
 		 */
 		
 		// EVENT -- Connect to server  
@@ -172,7 +162,6 @@ public class Client extends Application {
 					InetSocketAddress inetSocketAddress = new InetSocketAddress(serverIP, 5000);
 					socket.connect(inetSocketAddress, timeout);
 					DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-				
 					sock = socket;
 					dataout = out;
 					myIP = socket.getLocalSocketAddress().toString();	
@@ -186,8 +175,7 @@ public class Client extends Application {
 					if(connected == true) { 
 						connectStage.hide();				// Hide Server window
 						primaryStage.show();				// Show Chat window
-					}
-					
+					}		
 				}
 			} catch (Exception e1) {
 				/* Handles NoRouteToHostException */
@@ -196,7 +184,6 @@ public class Client extends Application {
 				lb4.setTextFill(Color.RED);
 				hbox.getChildren().add(lb4);
 			} 
-			
 		});
 		
 		// EVENT -- Send a message
@@ -208,8 +195,9 @@ public class Client extends Application {
 			message = "";						
 				try {
 					dataout.write(clientMessage);
-				} catch (IOException e1) {
-					e1.printStackTrace();
+				// Handles server disconnection -- SocketException (Write failed)	
+				} catch (IOException ex) {
+					textarea.appendText("*** You have been disconnected. Please exit the program and reconnect. ***\n");
 				}
 		});
 		
@@ -226,9 +214,7 @@ public class Client extends Application {
 		});
 		
 		/*
-		 * 
 		 *  SERVER THREAD
-		 * 
 		 */
 				
 		// Create ClientRequest object -- used to start a server request thread
@@ -260,9 +246,9 @@ public class Client extends Application {
 
 /* ClientRequest: Handles server requests */
 class ClientRequest implements Runnable {
-	byte[] packet = new byte [256]; 
-	String serverIP = null;
+	byte[] packet = new byte [256];
 	byte[] text = new byte [256]; 
+	String serverIP = null;
 	DataInputStream input = null;
 	DataOutputStream request = null;
 	TextArea textarea = null;
@@ -302,7 +288,7 @@ class ClientRequest implements Runnable {
 				/* Timeout exception if timeout is being used */
 				textarea.appendText("\n*** You have exceeded the inactivity limit ***");
 				textarea.appendText("\n*** Please exit the program and reconnect ***");
-				textField.setText("");							// Clear textfield
+				textField.setText("");								// Clear textfield
 				textField.setEditable(false);						// Make disable TextField and force user to quit program
 				try {
 					disconnect();
@@ -324,6 +310,37 @@ class ClientRequest implements Runnable {
 	public void disconnect() throws IOException {
 		sock.close();
 	}
+	
+}
+
+/* Users: Online users */
+
+/*
+ * When user comes online, add them to the list
+ * When user disconnects, iterate through list and remove them
+ * Remove from textarea -- new scene or floating hbox in window
+ * 
+ * 
+ */
+class Users {
+	ArrayList <String> onlineUsers = new ArrayList<>();
+	
+	Users(String user) {
+		onlineUsers.add(user);
+	}
+	
+	Users() {
+		
+	}
+	
+	public void addUser(String user) {
+		onlineUsers.add(user);
+	}
+	
+	public void removeUser(String user) {
+		onlineUsers.remove(user);
+	}
+	
 	
 }
 
