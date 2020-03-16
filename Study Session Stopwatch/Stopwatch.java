@@ -1,5 +1,8 @@
 /* Personal Project -- Study Session Stopwatch
- * I created a stopwatch for my MacBook because MacOS doesn't include one out of the box
+ * Program allows user to keep track of course study sessions 
+ * Study times (and dates) are recorded to a file when the user clicks the "Stop" button
+ * 
+ * I created this program because MacOS doesn't include one out of the box
  * I use this to keep track of my study sessions
  */
 
@@ -12,14 +15,16 @@ import javafx.geometry.Pos;
 import javafx.geometry.Insets;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.layout.HBox;
 import javafx.scene.Scene;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.Font;
 import javafx.scene.paint.Color;
 import javafx.scene.control.Button;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import java.io.ByteArrayOutputStream;
@@ -27,6 +32,7 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Date;
 
 public class Stopwatch extends Application {
 	long milliseconds;
@@ -34,19 +40,20 @@ public class Stopwatch extends Application {
 	long currentMinute;
 	long seconds;
 	long currentHour;
+	long pos = 0;
 	String second = "";
 	String minute = "";
 	String hour = "";
+	String course = "";
 	boolean t = false;
 	boolean f = true;
-	byte [] array = new byte [30];
-	byte [] lstPos = new byte [30];
-	
-	long pos = 0;
+	boolean load = false;
+	byte [] array = new byte [10];
 	
 	public void start(Stage primaryStage) throws Exception {
-		RandomAccessFile inout = new RandomAccessFile("session", "rw");
-		RandomAccessFile lp = new RandomAccessFile("last", "rw");
+		Date date = new Date();
+		RandomAccessFile inout = new RandomAccessFile("Study Sessions", "rw");
+		RandomAccessFile lp = new RandomAccessFile("fp", "rw");
 		ByteArrayOutputStream bout = new ByteArrayOutputStream();
 		DataOutputStream di = new DataOutputStream(bout);
 		StackPane root = new StackPane();
@@ -70,19 +77,51 @@ public class Stopwatch extends Application {
 		text.setFill(Color.BLUE);
 		BorderPane.setMargin(text, new Insets(0,0,50,0));
 		
+		// Stopwatch "lap"
 		Text lap = new Text();
 		lap.setFill(Color.RED);
 		lap.setFont(new Font(13));
-	
+		
+		// HBox holds user "Stop" message 
+		HBox hbox2 = new HBox();
+		hbox2.setAlignment(Pos.CENTER);
+		String m = "Make sure to click \"Stop\" to record your session";
+		Text message = new Text(m);
+		message.setFill(Color.RED);
+		hbox2.getChildren().add(message);
+		
+		// Button objects
 		Button start = new Button("Start");
 		Button stop = new Button("Stop");
 		Button reset = new Button("Reset");
 		
+		// Add panes to StackPane
 		hbox.getChildren().addAll(start, stop, reset);
 		pane.setCenter(text);
 		root.getChildren().addAll(lapPane, pane, lap, hbox);
 		
-		// EVENT
+		 // Pane, HBox, VBox for new Scene -- Course name stage
+		BorderPane b = new BorderPane();
+		HBox hbox3 = new HBox(10);
+		hbox3.setAlignment(Pos.CENTER);
+		VBox vbox = new VBox(10);
+		vbox.setAlignment(Pos.CENTER);
+		Text enterClass = new Text("Enter course name ");
+		Button enterCourse = new Button("Submit");
+		TextField tf = new TextField();
+		hbox3.getChildren().addAll(tf, enterCourse);
+		vbox.getChildren().addAll(enterClass, hbox3);
+		b.setCenter(vbox);		
+
+		// Create a new Scene so that user can input Course name
+		Scene scene2 = new Scene(b, 350, 300);
+		Stage secondStage = new Stage();
+		secondStage.setScene(scene2);
+		secondStage.setTitle("Study Session Stopwatch");
+		secondStage.setResizable(false);
+		secondStage.show();
+		
+		// EVENT -- Used for Timeline
 		EventHandler <ActionEvent> event = new EventHandler<ActionEvent>(){
 			public void handle(ActionEvent e) {
 				if(t == false) {
@@ -135,19 +174,37 @@ public class Stopwatch extends Application {
 		Timeline timeline = new Timeline(new KeyFrame(Duration.millis(1000), event));
 		timeline.setCycleCount(Timeline.INDEFINITE);
 		
+		// COURSE EVENT
+		enterCourse.setOnAction(e -> {
+			course = tf.getText();
+			load = true;
+			if(load == true) {
+				secondStage.hide();
+				lapPane.setTop(hbox2);
+				Scene scene = new Scene(root, 350, 300, Color.BLACK);
+				primaryStage.setScene(scene);
+				primaryStage.setResizable(false);
+				primaryStage.setTitle("Study Session Stopwatch");
+				primaryStage.show();		
+			}
+		});
+		
 		// BUTTON EVENTS
 		start.setOnAction(e -> {
+			message.setText("");
 			timeline.play();
 		});	
 		
 		stop.setOnAction(e -> {
 			timeline.stop();
 			if(currentSecond > 0) {
-				String lapTime = "Study time: " + hour + ":" + minute + ":" + second;
-				lap.setText(lapTime);
+				String sessionTime = "Study time: " + hour + ":" + minute + ":" + second;
+				lap.setText(sessionTime);
 				lapPane.setBottom(lap);	
-				lapTime += "\n";
-				array = lapTime.getBytes();
+				
+				sessionTime = date.toString() + "\n" + course + " - " + hour  + ":" + minute + ":" + second + "\n" +
+						"----------------------------------------\n";
+				array = sessionTime.getBytes();
 				try {
 					inout.seek(pos);
 					inout.write(array); 
@@ -168,17 +225,11 @@ public class Stopwatch extends Application {
 			text.setText("00:00:00");
 			timeline.stop();
 		});
-		
-		Scene scene = new Scene(root, 300, 300, Color.BLACK);
-		primaryStage.setScene(scene);
-		primaryStage.setResizable(false);
-		primaryStage.setTitle("Study Session Stopwatch");
-		primaryStage.show();		
+
 	}
 	
 	public static void main(String[] args) {
-		Application.launch(args);
-		
+		Application.launch(args);	
 	}
 
 }
