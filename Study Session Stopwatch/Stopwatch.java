@@ -1,6 +1,6 @@
 /* Personal Project -- Study Session Stopwatch
  * I created a stopwatch for my MacBook because MacOS doesn't include one out of the box
- * I use this to monitor my study sessions
+ * I use this program to monitor my study sessions
  */
 
 package stopwatch;
