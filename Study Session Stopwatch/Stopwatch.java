@@ -1,5 +1,5 @@
 /* Personal Project -- Study Session Stopwatch
- * Program allows user to keep track of course study sessions 
+ * Program allows user to keep track of study sessions 
  * Study times (and dates) are recorded to a file when the user clicks the "Stop" button
  * 
  * I created this program because MacOS doesn't include one out of the box
