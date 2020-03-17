@@ -71,7 +71,7 @@ public class Stopwatch extends Application {
 			pos = 0;
 		}
 
-		HBox hbox = new HBox(30);
+		HBox hbox = new HBox(20);
 		hbox.setAlignment(Pos.CENTER);
 		hbox.setPadding(new Insets(140,0,0,0));
 		
@@ -98,6 +98,10 @@ public class Stopwatch extends Application {
 		Button pause = new Button("Pause")
 ;		Button stop = new Button("Stop");
 		Button reset = new Button("Reset");
+		start.setPrefWidth(75);
+		pause.setPrefWidth(75);
+		stop.setPrefWidth(75);
+		reset.setPrefWidth(75);
 		
 		// Add nodes and panes to StackPane
 		hbox.getChildren().addAll(start, pause, stop, reset);
@@ -125,7 +129,7 @@ public class Stopwatch extends Application {
 		b.setCenter(vbox);		
 
 		// Create a new Scene so that user can input Course name
-		Scene scene2 = new Scene(b, 350, 300);
+		Scene scene2 = new Scene(b, 375, 300);
 		Stage firstStage = new Stage();
 		firstStage.setScene(scene2);
 		firstStage.setTitle("Study Session Stopwatch");
@@ -192,7 +196,7 @@ public class Stopwatch extends Application {
 			if(load == true) { 
 				firstStage.hide();
 				lapPane.setTop(hbox2);
-				Scene scene = new Scene(root, 350, 300, Color.BLACK);
+				Scene scene = new Scene(root, 375, 300, Color.BLACK);
 				primaryStage.setScene(scene);
 				primaryStage.setResizable(false);
 				primaryStage.setTitle("Study Session Stopwatch");
@@ -202,20 +206,26 @@ public class Stopwatch extends Application {
 		
 		// BUTTON EVENTS
 		start.setOnAction(e -> {
+			if(timeline.getStatus() == Status.PAUSED) {
+				pause.setText("Pause");
+			}
 			message.setText("");
 			timeline.play();
 			clockStop = false;
+			
 		});	
 		
 		pause.setOnAction(e -> {
 			if(currentSecond > 0 && clockStop == false) {
 				message.setText("Paused");
+				pause.setText("Resume");
 				timeline.pause();
 				clockStop = true;
 			} else {
 				timeline.getStatus();
 				if (clockStop == true && timeline.getStatus() == Status.PAUSED) {
 					message.setText("");
+					pause.setText("Pause");
 					timeline.play();
 					clockStop = false;
 				}
@@ -244,10 +254,17 @@ public class Stopwatch extends Application {
 				} catch (IOException ex) {
 					ex.printStackTrace();
 				}
-			} 
+			}
+			if(timeline.getStatus() == Status.STOPPED) {
+				pause.setText("Pause");
+			}
 		});
 		
 		reset.setOnAction(e -> {
+			if(timeline.getStatus() == Status.PAUSED) {
+				pause.setText("Pause");
+				message.setText("");
+			}
 			currentSecond = 0;
 			currentMinute = 0;
 			currentHour = 0;
