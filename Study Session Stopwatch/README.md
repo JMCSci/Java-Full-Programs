@@ -1,7 +1,7 @@
 ## Study Session Stopwatch
 
 - JavaFX program allows user to keep track of study sessions 
-- Study times (and dates) are recorded to a file when the user clicks the "Stop" button
+- Study times (and dates) are saved to a file when the user clicks the "Stop" button
 - Data saved to file named "Study Sessions"
 
 I created this program because MacOS doesn't include a stopwatch as part of its operating system.
