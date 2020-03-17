@@ -1,8 +1,9 @@
 /* Personal Project -- Study Session Stopwatch
- * Program allows user to keep track of study sessions 
+ * Program allows user to keep track of course study sessions 
  * Study times (and dates) are recorded to a file when the user clicks the "Stop" button
+ * Saved filed is named "Study Sessions"
  * 
- * I created this program because MacOS doesn't include one out of the box
+ * I created this program because MacOS doesn't include a stopwatch as part of its operating system
  * I use this to keep track of my study sessions
  */
 
@@ -100,26 +101,32 @@ public class Stopwatch extends Application {
 		pane.setCenter(text);
 		root.getChildren().addAll(lapPane, pane, lap, hbox);
 		
-		 // Pane, HBox, VBox for new Scene -- Course name stage
+		 // Pane, HBox, VBox, Text, Button for new Scene -- Course stage
 		BorderPane b = new BorderPane();
+		
 		HBox hbox3 = new HBox(10);
 		hbox3.setAlignment(Pos.CENTER);
+		
 		VBox vbox = new VBox(10);
 		vbox.setAlignment(Pos.CENTER);
-		Text enterClass = new Text("Enter course name ");
-		Button enterCourse = new Button("Submit");
+		
+		Text enterCourse = new Text("Enter course name ");
+		
+		Button submit = new Button("Submit");
+		
 		TextField tf = new TextField();
-		hbox3.getChildren().addAll(tf, enterCourse);
-		vbox.getChildren().addAll(enterClass, hbox3);
+		
+		hbox3.getChildren().addAll(tf, submit);
+		vbox.getChildren().addAll(enterCourse, hbox3);
 		b.setCenter(vbox);		
 
 		// Create a new Scene so that user can input Course name
 		Scene scene2 = new Scene(b, 350, 300);
-		Stage secondStage = new Stage();
-		secondStage.setScene(scene2);
-		secondStage.setTitle("Study Session Stopwatch");
-		secondStage.setResizable(false);
-		secondStage.show();
+		Stage firstStage = new Stage();
+		firstStage.setScene(scene2);
+		firstStage.setTitle("Study Session Stopwatch");
+		firstStage.setResizable(false);
+		firstStage.show();
 		
 		// EVENT -- Used for Timeline
 		EventHandler <ActionEvent> event = new EventHandler<ActionEvent>(){
@@ -175,11 +182,11 @@ public class Stopwatch extends Application {
 		timeline.setCycleCount(Timeline.INDEFINITE);
 		
 		// COURSE EVENT
-		enterCourse.setOnAction(e -> {
+		submit.setOnAction(e -> {
 			course = tf.getText();
 			load = true;
 			if(load == true) {
-				secondStage.hide();
+				firstStage.hide();
 				lapPane.setTop(hbox2);
 				Scene scene = new Scene(root, 350, 300, Color.BLACK);
 				primaryStage.setScene(scene);
