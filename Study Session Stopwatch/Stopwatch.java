@@ -49,12 +49,13 @@ public class Stopwatch extends Application {
 	boolean t = false;
 	boolean f = true;
 	boolean load = false;
+	boolean clockStop = false;
 	byte [] array = new byte [10];
 	
 	public void start(Stage primaryStage) throws Exception {
 		Date date = new Date();
-		RandomAccessFile inout = new RandomAccessFile("Study Sessions", "rw");
-		RandomAccessFile lp = new RandomAccessFile("fp", "rw");
+		RandomAccessFile inout = new RandomAccessFile("ss", "rw");
+		RandomAccessFile lp = new RandomAccessFile("test", "rw");
 		ByteArrayOutputStream bout = new ByteArrayOutputStream();
 		DataOutputStream di = new DataOutputStream(bout);
 		StackPane root = new StackPane();
@@ -93,11 +94,12 @@ public class Stopwatch extends Application {
 		
 		// Button objects
 		Button start = new Button("Start");
-		Button stop = new Button("Stop");
+		Button pause = new Button("Pause")
+;		Button stop = new Button("Stop");
 		Button reset = new Button("Reset");
 		
 		// Add nodes and panes to StackPane
-		hbox.getChildren().addAll(start, stop, reset);
+		hbox.getChildren().addAll(start, pause, stop, reset);
 		pane.setCenter(text);
 		root.getChildren().addAll(lapPane, pane, lap, hbox);
 		
@@ -201,10 +203,21 @@ public class Stopwatch extends Application {
 		start.setOnAction(e -> {
 			message.setText("");
 			timeline.play();
+			clockStop = false;
 		});	
 		
+		pause.setOnAction(e -> {
+			if(currentSecond > 0 && clockStop == false) {
+				message.setText("Pause");
+				timeline.pause();
+				clockStop = true;
+			}
+		});
+		
 		stop.setOnAction(e -> {
+			message.setText("");
 			timeline.stop();
+			clockStop = true;
 			if(currentSecond > 0) {
 				String sessionTime = "Study time: " + hour + ":" + minute + ":" + second;
 				lap.setText(sessionTime);
