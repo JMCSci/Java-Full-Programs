@@ -96,12 +96,12 @@ public class Stopwatch extends Application {
 		Button stop = new Button("Stop");
 		Button reset = new Button("Reset");
 		
-		// Add panes to StackPane
+		// Add nodes and panes to StackPane
 		hbox.getChildren().addAll(start, stop, reset);
 		pane.setCenter(text);
 		root.getChildren().addAll(lapPane, pane, lap, hbox);
 		
-		 // Pane, HBox, VBox, Text, Button for new Scene -- Course stage
+		// Pane, HBox, VBox, Text, Button for new Scene -- Course stage
 		BorderPane b = new BorderPane();
 		
 		HBox hbox3 = new HBox(10);
@@ -116,6 +116,7 @@ public class Stopwatch extends Application {
 		
 		TextField tf = new TextField();
 		
+		// Add nodes and panes to BorderPane
 		hbox3.getChildren().addAll(tf, submit);
 		vbox.getChildren().addAll(enterCourse, hbox3);
 		b.setCenter(vbox);		
