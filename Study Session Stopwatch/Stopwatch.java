@@ -9,6 +9,7 @@
 
 package stopwatch;
 
+import javafx.animation.Animation.Status;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
@@ -54,8 +55,8 @@ public class Stopwatch extends Application {
 	
 	public void start(Stage primaryStage) throws Exception {
 		Date date = new Date();
-		RandomAccessFile inout = new RandomAccessFile("ss", "rw");
-		RandomAccessFile lp = new RandomAccessFile("test", "rw");
+		RandomAccessFile inout = new RandomAccessFile("Study Sessions", "rw");
+		RandomAccessFile lp = new RandomAccessFile("fp", "rw");
 		ByteArrayOutputStream bout = new ByteArrayOutputStream();
 		DataOutputStream di = new DataOutputStream(bout);
 		StackPane root = new StackPane();
@@ -188,7 +189,7 @@ public class Stopwatch extends Application {
 		submit.setOnAction(e -> {
 			course = tf.getText();
 			load = true;
-			if(load == true) {
+			if(load == true) { 
 				firstStage.hide();
 				lapPane.setTop(hbox2);
 				Scene scene = new Scene(root, 350, 300, Color.BLACK);
@@ -208,9 +209,16 @@ public class Stopwatch extends Application {
 		
 		pause.setOnAction(e -> {
 			if(currentSecond > 0 && clockStop == false) {
-				message.setText("Pause");
+				message.setText("Paused");
 				timeline.pause();
 				clockStop = true;
+			} else {
+				timeline.getStatus();
+				if (clockStop == true && timeline.getStatus() == Status.PAUSED) {
+					message.setText("");
+					timeline.play();
+					clockStop = false;
+				}
 			}
 		});
 		
