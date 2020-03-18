@@ -19,12 +19,16 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.Font;
 import javafx.scene.paint.Color;
 import javafx.scene.control.Button;
+import javafx.scene.control.RadioButton;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -75,10 +79,9 @@ public class Stopwatch extends Application {
 		hbox.setAlignment(Pos.CENTER);
 		hbox.setPadding(new Insets(140,0,0,0));
 		
-		Text text = new Text("00:00:00");
-		text.setFont(new Font(65));
-		text.setFill(Color.BLUE);
-		BorderPane.setMargin(text, new Insets(0,0,50,0));
+		Text time = new Text("00:00:00");
+		time.setFont(new Font(65));
+		BorderPane.setMargin(time, new Insets(0,0,50,0));
 		
 		// Stopwatch "lap"
 		Text lap = new Text();
@@ -95,8 +98,8 @@ public class Stopwatch extends Application {
 		
 		// Button objects
 		Button start = new Button("Start");
-		Button pause = new Button("Pause")
-;		Button stop = new Button("Stop");
+		Button pause = new Button("Pause");
+		Button stop = new Button("Stop");
 		Button reset = new Button("Reset");
 		start.setPrefWidth(75);
 		pause.setPrefWidth(75);
@@ -105,27 +108,45 @@ public class Stopwatch extends Application {
 		
 		// Add nodes and panes to StackPane
 		hbox.getChildren().addAll(start, pause, stop, reset);
-		pane.setCenter(text);
+		pane.setCenter(time);
 		root.getChildren().addAll(lapPane, pane, lap, hbox);
 		
 		// Pane, HBox, VBox, Text, Button for new Scene -- Course stage
 		BorderPane b = new BorderPane();
 		
+		// HBox holds Textfield and Submit button
 		HBox hbox3 = new HBox(10);
 		hbox3.setAlignment(Pos.CENTER);
 		
-		VBox vbox = new VBox(10);
+		// Vbox holds Text, HBox, and Radio Buttons
+		VBox vbox = new VBox(20);
 		vbox.setAlignment(Pos.CENTER);
 		
 		Text enterCourse = new Text("Enter course name ");
+		enterCourse.setFill(Color.BLACK);
 		
+		// Submit course
 		Button submit = new Button("Submit");
+		submit.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
 		
+		// Course textfield
 		TextField tf = new TextField();
+		
+		// Group Radio Buttons
+		ToggleGroup group = new ToggleGroup();
+		
+		// Radio Buttons -- Light and Dark Mode
+		RadioButton lightMode = new RadioButton("Light mode");
+		RadioButton darkMode = new RadioButton("Dark mode");
+		lightMode.setTextFill(Color.BLACK);
+		darkMode.setTextFill(Color.BLACK);
+		lightMode.setToggleGroup(group);
+		darkMode.setToggleGroup(group);
+		group.selectToggle(lightMode);
 		
 		// Add nodes and panes to BorderPane
 		hbox3.getChildren().addAll(tf, submit);
-		vbox.getChildren().addAll(enterCourse, hbox3);
+		vbox.getChildren().addAll(enterCourse, hbox3, lightMode, darkMode);
 		b.setCenter(vbox);		
 
 		// Create a new Scene so that user can input Course name
@@ -158,8 +179,7 @@ public class Stopwatch extends Application {
 					minute = String.format("%02d", currentMinute);
 					second = String.format("%02d", currentSecond);
 					
-					text.setText(hour + ":" + minute + ":" + second);
-					
+					time.setText(hour + ":" + minute + ":" + second);
 					t = true;
 				} else {
 					milliseconds = System.currentTimeMillis();
@@ -181,7 +201,7 @@ public class Stopwatch extends Application {
 					minute = String.format("%02d", currentMinute);
 					second = String.format("%02d", currentSecond);
 					
-					text.setText(hour + ":" + minute + ":" + second);
+					time.setText(hour + ":" + minute + ":" + second);
 					t = false;
 				}
 		};
@@ -196,7 +216,7 @@ public class Stopwatch extends Application {
 			if(load == true) { 
 				firstStage.hide();
 				lapPane.setTop(hbox2);
-				Scene scene = new Scene(root, 375, 300, Color.BLACK);
+				Scene scene = new Scene(root, 375, 300);
 				primaryStage.setScene(scene);
 				primaryStage.setResizable(false);
 				primaryStage.setTitle("Study Session Stopwatch");
@@ -204,6 +224,39 @@ public class Stopwatch extends Application {
 			}
 		});
 		
+		// EVENT -- Light Mode
+		lightMode.setOnAction(e -> {
+			enterCourse.setFill(Color.BLACK);
+			b.setBackground(new Background(new BackgroundFill(Color.TRANSPARENT, null, null)));
+			root.setBackground(new Background(new BackgroundFill(Color.TRANSPARENT, null, null)));
+			time.setFill(Color.BLACK);
+			lightMode.setTextFill(Color.BLACK);
+			darkMode.setTextFill(Color.BLACK);
+			// Change background color of buttons (dark mode)
+			submit.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+			start.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+			pause.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+			stop.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+			reset.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+			
+		});
+		
+		// EVENT - Dark Mode
+		darkMode.setOnAction(e -> {
+			enterCourse.setFill(Color.WHITE);
+			b.setBackground(new Background(new BackgroundFill(Color.BLACK, null, null)));
+			root.setBackground(new Background(new BackgroundFill(Color.BLACK, null, null)));
+			time.setFill(Color.ORANGE);
+			lightMode.setTextFill(Color.WHITE);
+			darkMode.setTextFill(Color.WHITE);
+			// Change background color of buttons (dark mode)
+			submit.setBackground(new Background(new BackgroundFill(Color.DARKGREY, null, null)));
+			start.setBackground(new Background(new BackgroundFill(Color.DARKGREY, null, null)));
+			pause.setBackground(new Background(new BackgroundFill(Color.DARKGREY, null, null)));
+			stop.setBackground(new Background(new BackgroundFill(Color.DARKGREY, null, null)));
+			reset.setBackground(new Background(new BackgroundFill(Color.DARKGREY, null, null)));
+		});
+	
 		// BUTTON EVENTS
 		start.setOnAction(e -> {
 			if(timeline.getStatus() == Status.PAUSED) {
@@ -268,7 +321,7 @@ public class Stopwatch extends Application {
 			currentSecond = 0;
 			currentMinute = 0;
 			currentHour = 0;
-			text.setText("00:00:00");
+			time.setText("00:00:00");
 			timeline.stop();
 		});
 
