@@ -1,4 +1,4 @@
-## Chat Application 
+# Chat Application 
 
 Application allows mulitple users to communicate over a network. 
 
