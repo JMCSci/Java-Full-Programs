@@ -324,6 +324,32 @@ public class Stopwatch extends Application {
 			time.setText("00:00:00");
 			timeline.stop();
 		});
+		
+		// Saves time to file if user closes window using exit button
+		primaryStage.setOnCloseRequest(e -> {
+			message.setText("");
+			timeline.stop();
+			clockStop = true;
+			if(currentSecond > 0) {
+				String sessionTime = "Study time: " + hour + ":" + minute + ":" + second;
+				sessionTime = date.toString() + "\n" + course + " - " + hour  + ":" + minute + ":" + second + "\n" +
+						"----------------------------------------\n";
+				array = sessionTime.getBytes();
+				try {
+					inout.seek(pos);
+					inout.write(array); 
+					// Get file pointer position
+					pos = inout.getFilePointer();
+					lp.seek(0);
+					lp.writeLong(pos);
+				} catch (IOException ex) {
+					ex.printStackTrace();
+				}
+			}
+			if(timeline.getStatus() == Status.STOPPED) {
+				pause.setText("Pause");
+			}
+		});
 
 	}
 	
