@@ -1,7 +1,7 @@
 # Study Session Stopwatch
 
-- JavaFX program allows user to keep track of study sessions 
-- Study times (and dates) are saved to a file when the user clicks the "Stop" button
+- JavaFX program allows user to keep track of study sessions
+- Study times (and dates) are saved to a file when the user clicks the "Stop" button or quits the program
 - Data saved to file named "Study Sessions"
 - Program includes an option for Light or Dark mode (great for late night study sessions)
 
