@@ -327,10 +327,11 @@ public class Stopwatch extends Application {
 		
 		// Saves time to file if user closes window using exit button
 		primaryStage.setOnCloseRequest(e -> {
-			message.setText("");
-			timeline.stop();
-			clockStop = true;
-			if(currentSecond > 0) {
+			
+			if(currentSecond > 0 && timeline.getStatus() != Status.STOPPED) {
+				message.setText("");
+				timeline.stop();
+				clockStop = true;
 				String sessionTime = "Study time: " + hour + ":" + minute + ":" + second;
 				sessionTime = date.toString() + "\n" + course + " - " + hour  + ":" + minute + ":" + second + "\n" +
 						"----------------------------------------\n";
@@ -345,7 +346,7 @@ public class Stopwatch extends Application {
 				} catch (IOException ex) {
 					ex.printStackTrace();
 				}
-			}
+			} 
 			if(timeline.getStatus() == Status.STOPPED) {
 				pause.setText("Pause");
 			}
