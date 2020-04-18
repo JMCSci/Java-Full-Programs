@@ -1,4 +1,4 @@
-/* Personal Project -- Study Session Stopwatch
+/* Personal Project -- Study Timer
  * Program allows user to keep track of course study sessions 
  * Study times (and dates) are recorded to a file when the user clicks the "Stop" button
  * Saved filed is named "Study Sessions"
@@ -153,7 +153,7 @@ public class Stopwatch extends Application {
 		Scene scene2 = new Scene(b, 375, 300);
 		Stage firstStage = new Stage();
 		firstStage.setScene(scene2);
-		firstStage.setTitle("Study Session Stopwatch");
+		firstStage.setTitle("Study Timer");
 		firstStage.setResizable(false);
 		firstStage.show();
 		
@@ -219,7 +219,7 @@ public class Stopwatch extends Application {
 				Scene scene = new Scene(root, 375, 300);
 				primaryStage.setScene(scene);
 				primaryStage.setResizable(false);
-				primaryStage.setTitle("Study Session Stopwatch");
+				primaryStage.setTitle("Study Timer");
 				primaryStage.show();		
 			}
 		});
