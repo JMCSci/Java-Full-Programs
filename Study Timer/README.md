@@ -1,4 +1,4 @@
-# Study Session Stopwatch
+# Study Timer
 
 - JavaFX program allows user to keep track of study sessions
 - Study times (and dates) are saved to a file when the user clicks the "Stop" button or quits the program
