@@ -1,7 +1,7 @@
 /* StockQuotes 
  * Program retrieves current stock prices
  * Obtains data from Yahoo Finance
- * Parses HTML and returns current quote
+ * Scrapes HTML and returns current quote
  */
 
 package stock;
