@@ -1,4 +1,4 @@
 # Stock Quotes 
 
-- Application retrieves and returns current stock quote 
+- Application allows user to retrieve current stock quote 
 - Scrapes HTML from Yahoo Finance
