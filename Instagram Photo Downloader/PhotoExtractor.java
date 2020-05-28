@@ -70,7 +70,7 @@ public class PhotoExtractor {
 	
 	// initialRequest: Extracts images from HTML document; retrieves required information to generate query URL for subsequent requests
 	public static void initialRequest(ParseJSON parseJSON) throws Exception {
-		URL	html = new URL(instaURL);
+		URL html = new URL(instaURL);
 		URL jsPage;
 		CookieHandler.setDefault(cm);
 		HttpURLConnection conn = (HttpURLConnection) html.openConnection();
@@ -166,6 +166,7 @@ public class PhotoExtractor {
 		while ((line = reader.readLine()) != null) {
 			page += line;
 		}
+		reader.close();
 	}
 	
 	
@@ -219,6 +220,7 @@ public class PhotoExtractor {
 			i++;	
 		}
 		System.out.println("TOTAL LINKS: " + jsonLinks.size());
+		reader.close();
 	}
 			
 	// readFileHTML: Reads HTML and adds downloadable links to queue data structure
@@ -272,25 +274,24 @@ public class PhotoExtractor {
 			}
 				i++;	
 		}	
-
+		reader.close();
 	}
 	
 	// parseURL: Adds removes Unicode value and replaces with it "&"; adds link to data structure -- FOR HTML DOCUMENT LINKS ONLY !!!!
-		public static void parseURL() throws Exception {
-			String delimeter4 = "[\"]";
-			String unicode = "\\\\u0026";
-			String link = "";
-			while(!finalQ.isEmpty()) {
-				String [] tokens = finalQ.pop().split(delimeter4);
-				for(int j = 0; j < tokens.length; j++) {
-						link = tokens[j];
-						link = link.replaceAll(unicode, "&");
-						htmlLinks.push(link);
-				}	
-			}
-			
-			System.out.println("TOTAL LINKS: " + htmlLinks.size());			
-		}	
+	public static void parseURL() throws Exception {
+		String delimeter4 = "[\"]";
+		String unicode = "\\\\u0026";
+		String link = "";
+		while(!finalQ.isEmpty()) {
+			String [] tokens = finalQ.pop().split(delimeter4);
+			for(int j = 0; j < tokens.length; j++) {
+				link = tokens[j];
+				link = link.replaceAll(unicode, "&");
+				htmlLinks.push(link);
+			}	
+		}			
+		System.out.println("TOTAL LINKS: " + htmlLinks.size());			
+	}	
 		
 	// readLinks: Reads links from array and outputs as a JPG file
 	public static void readLinks() throws IOException, URISyntaxException {			
