@@ -1,8 +1,5 @@
 /* Instagram Photo Downloader
  * Program downloads photos from Instagram profiles
- * Reads and extracts images from HTML document
- * Extracts relevent information from HTML and JS files which is then used to create URL next page (JSON) 
- * Reads and extracts from JSON 
  */
 
 package extractor;
