@@ -1,8 +1,5 @@
 /* ParseJSON class
- * 
- * Parses HTML and JSON for end cursor
- * Parses JSON for query hash
- * Parses JSON for profile id number
+ *
  * Uses this information to generate URL for next JSON file
  */
 
