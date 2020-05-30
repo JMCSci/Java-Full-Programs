@@ -1,12 +1,12 @@
 /* ParseJSON class
- *
+ * 
+ * Parses HTML and JSON for end cursor
+ * Parses JSON for query hash
+ * Parses JSON for profile id number
  * Uses this information to generate URL for next JSON file
  */
 
 package extractor;
-
-import java.io.File;
-import java.util.Scanner;
 
 public class ParseJSON {
 	String json;					// holds JSON
@@ -15,7 +15,7 @@ public class ParseJSON {
 	String queryHash;				// holds end query hash
 	String profileId;				// holds id number
 	final String QUERYHASH = "44efc15d3c13342d02df0b5a9fa3d33f";	// hard coded
-	boolean hasNextPage = true; 	// default is true
+	boolean hasNextPage = false; 	// default is false
 	String jsonURL = "https://www.instagram.com/graphql/query/?query_hash=";
 	String afterQueryHash = "&variables=%7B%22id%22%3A%22";
 	String afterProfileId = "%22%2C%22first%22%3A12%2C%22after%22%3A%22";
@@ -73,23 +73,15 @@ public class ParseJSON {
 	
 	// extractQueryHash: Extracts query id/hash from .js file -- only run once (at beginning from js file)
 	public void extractQueryHash(String javascript) throws Exception {
-		//file: c764fdbac4ca.js
-		File file = new File("jsfile");
-		Scanner sc = new Scanner(file);
-		String js = "";
-		String delimiter1 = "o?void0:o.pagination},queryId:\"";
+		String delimiter1 = "void 0:s.pagination},queryId:\"";
 		String delimiter2 = "\"";
-		
-		while(sc.hasNext()) {
-			js += sc.next();
-		}
-		
-		String [] tokens1 = js.split(delimiter1);
+			
+		String [] tokens1 = javascript.split(delimiter1);
 		
 		String [] tokens2 = tokens1[1].split(delimiter2);
 		
 		queryHash = tokens2[0];	
-		sc.close();
+				
 	}
 	
 	// constructURL: Constructs url for next query -- last thing to be done
@@ -106,6 +98,13 @@ public class ParseJSON {
 	// setQueryHash: Setter for query hash
 	public void setQueryHash(String containerValue) {
 		queryHash = containerValue;
+	}
+	
+	// setHasNextPage: Setter for hasNextPage -- only used once in initialRequest method
+	public void setHasNextPage(boolean htmlNextPage) {
+		if(htmlNextPage == true) {
+			hasNextPage = true;
+		}
 	}
 
 }
