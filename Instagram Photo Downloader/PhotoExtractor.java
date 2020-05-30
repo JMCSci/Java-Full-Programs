@@ -1,5 +1,8 @@
 /* Instagram Photo Downloader
  * Program downloads photos from Instagram profiles
+ * Reads and extracts images from HTML document
+ * Extracts relevent information from HTML and JS files which is then used to create URL next page (JSON) 
+ * Reads and extracts from JSON 
  */
 
 package extractor;
@@ -19,6 +22,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URISyntaxException;
 import java.util.ArrayDeque;
+import java.util.InputMismatchException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
@@ -28,7 +32,10 @@ public class PhotoExtractor {
 	static ArrayDeque <String> jsonLinks = new ArrayDeque<>();
 	static ArrayDeque<String> queue = new ArrayDeque<>();
 	static ArrayDeque<String> finalQ = new ArrayDeque<>();
+	static boolean htmlNextPage = false;		// default is false
+	static int counter = 1;
 	static int num = 1;
+	static int selection; 
 	static CookieManager cm = new CookieManager();
 	static String instaURL;
 	static String c = "";
@@ -37,15 +44,16 @@ public class PhotoExtractor {
 	static String filename = "";
 	static String containerValue = "";	
 	static String jsFile = ""; 
-	static int counter = 1;
-	
+	static String resolution;
+
 	public static void main(String[] args) throws Exception {
 		ParseJSON parseJSON = new ParseJSON();
 		Scanner sc = new Scanner(System.in);
-		System.out.print("Enter IG URL: ");		
+		System.out.print("Enter IG URL: ");
 		instaURL = sc.nextLine();
 		System.out.print("Enter filename you wish to use: ");
 		filename = sc.nextLine();
+		resolutionSize(sc);
 		
 		// Initial GET request -- HTML files
 		initialRequest(parseJSON);
@@ -61,14 +69,40 @@ public class PhotoExtractor {
 			Thread.sleep(2000);
 			counter++;
 			System.out.println("PAGE: " + counter);
-			}
+		}
 		sc.close();
+	}
+	
+	// resolutionSize: Allows user to select image resolution size
+	public static void resolutionSize(Scanner sc) {
+		while(selection != 1 || selection != 2) {
+			try {
+				System.out.println("\nChoose image resolution size:");
+				System.out.println("-----------------------------\n");
+				System.out.println("1 - High");
+				System.out.println("2 - Medium\n");
+				System.out.print("Selection: ");
+				selection = sc.nextInt();
+				if(selection == 1) {
+					resolution = "1080x1080";
+					break;
+				} else if(selection == 2) {
+					resolution = "s640x640";
+					break;
+				}
+				System.out.println("Please enter a valid selection.");
+				continue;
+			} catch(InputMismatchException ex) {
+				System.out.println("Please enter a valid selection.");
+			}
+			sc.next();
+		}	
 	}
 	
 	// initialRequest: Extracts images from HTML document; retrieves required information to generate query URL for subsequent requests
 	public static void initialRequest(ParseJSON parseJSON) throws Exception {
-		URL html = new URL(instaURL);
-		URL jsPage;
+		URL	html = new URL(instaURL);
+		URL jsPage = null;
 		CookieHandler.setDefault(cm);
 		HttpURLConnection conn = (HttpURLConnection) html.openConnection();
 		BufferedReader reader = new BufferedReader(new InputStreamReader(html.openStream()));
@@ -88,72 +122,57 @@ public class PhotoExtractor {
 			}
 			c += cook.getName() + "=" + cook.getValue() + "; ";
 
-		}
-		 
+		} 
 		// Get profile ID, end cursor, and query hash to create URL for next page
 		readFileHTML(html);
+		// page variable contains html document
 		parseURL();	
-		readLinks(); // #### PUT THIS BACK WHEN TESTING
-		parseJSON.extractProfileId(page);
-		parseJSON.extractEndCursor(page);
-		parseJSON.queryHash = parseJSON.QUERYHASH;			// HARD CODED HASH QUERY
-		// after this so that html doc stays in page variable
-//		extractContainerPage(parseJSON);					// only gets tagged images -- FIX THIS!!!	
-//		jsPage = new URL(jsFile);							// only gets tagged images -- FIX THIS!!!
-		System.out.print("GENERATING URL...");	// add dots here??? another thread
-//		readJS(jsPage);
-//		parseJSON.extractQueryHash(page);					// NOT USED -- FOR NOW -- HARD QUERY IS HARD CODED
-		parseJSON.generateURL();
-		System.out.print("URL GENERATED.\n");
-		System.out.println(parseJSON.getQueryURL());
-		counter++;
-		System.out.println("PAGE: " + counter);
-		reader.close();
-		Thread.sleep(2000);
+		readLinks();
+		// Check if there is a next page after HTML document
+		htmlNextPage();
+		if(htmlNextPage == true) {
+			parseJSON.setHasNextPage(htmlNextPage);
+			// Start extraction to generate URL for next page (JSON)
+			parseJSON.extractEndCursor(page);	
+			parseJSON.extractProfileId(page);
+			extractPageContainer(parseJSON);
+			jsPage = new URL(jsFile);
+			readJS(jsPage);
+			// page variable now contains .js file
+			System.out.print("GENERATING URL...");	// add dots here??? another thread
+			parseJSON.extractQueryHash(page);					
+			parseJSON.generateURL();
+			System.out.print("URL GENERATED.\n");
+			System.out.println(parseJSON.getQueryURL());
+			counter++;
+			System.out.println("PAGE: " + counter);
+			reader.close();
+			Thread.sleep(2000);
+		}
+		
 	}
 	
-	// getRequest: GET request for JSON file 
-	public static void getRequest(ParseJSON parseJSON) throws Exception {
-		instaURL = parseJSON.getQueryURL();
-		URL queryURL = new URL(instaURL);
-		BufferedReader reader = new BufferedReader(new InputStreamReader(queryURL.openStream()));
-		HttpURLConnection conn2 = (HttpURLConnection) queryURL.openConnection();
-		conn2.setRequestMethod("GET");
-		conn2.setRequestProperty("Cookie", c);
-		conn2.getContent();
-		readStream(reader);
-		readFileJSON(queryURL); 		//read JSON document  ### CHANGE THE NAME OF THE METHOD SO ITS UNIVERSAL ### //
-		reader.close();
-	}
-
-	// extractContainerPage: Extracts query hash for placement in generated URL -- found in HTML document
-	public static void extractContainerPage(ParseJSON parseJSON) throws Exception {
-		String delimiter1 = "ProfilePageContainer.js/";
-		String delimiter2 = ".js";
+	// htmlNextPage: Checks if HTML document has a subsequent page 
+	public static void htmlNextPage() {
+		String findText = "\"has_next_page\":true";
 		
+		// If findText contents are in variable that mean there is a next page
+		htmlNextPage = page.contains(findText);
+	}
+	
+	// extractContainerPage: Parse HTML for .js file containing query hash -- found in HTML document
+	public static void extractPageContainer(ParseJSON parseJSON) throws Exception {
+		String delimiter1 = "\"/static/bundles/metro/ProfilePageContainer.js/";
+		String delimiter2 = ".js\"";
+			
 		String [] tokens1 = page.split(delimiter1);
 		String [] tokens2 = tokens1[1].split(delimiter2);
-		
+			
 		containerValue = tokens2[0];
-		// URL for javascript file
-		// This page differs from HTML page when read from a browser
-		// I'm assuming Instagram uses two different pages -- one for headless browsers and another for GUI browsers
-		// This work around uses the headless browser version of the .js file to find the query hash
-		jsFile = "https://www.instagram.com/static/bundles/metro/ProfilePageContainer.js/" + containerValue + ".js";
-		
-		URL js = new URL(jsFile);
-		readJS(js);
-		
-		delimiter1 = ";var l=\"";
-		delimiter2 = "\"";
-		
-		tokens1 = page.split(delimiter1);
-		tokens2 = tokens1[1].split(delimiter2);
-		
-		containerValue = tokens2[0];
-		parseJSON.setQueryHash(containerValue);
-	}		
 	
+		jsFile = "https://instagram.com/static/bundles/metro/ProfilePageContainer.js/" + containerValue + ".js";
+	}
+		
 	// readJS: Reads Javascript file (.js) to string variable
 	public static void readJS(URL url) throws Exception {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
@@ -165,8 +184,21 @@ public class PhotoExtractor {
 		}
 		reader.close();
 	}
-	
-	
+			
+	// getRequest: GET request for JSON file 
+	public static void getRequest(ParseJSON parseJSON) throws Exception {
+		instaURL = parseJSON.getQueryURL();
+		URL queryURL = new URL(instaURL);
+		BufferedReader reader = new BufferedReader(new InputStreamReader(queryURL.openStream()));
+		HttpURLConnection conn2 = (HttpURLConnection) queryURL.openConnection();
+		conn2.setRequestMethod("GET");
+		conn2.setRequestProperty("Cookie", c);
+		conn2.getContent();
+		readStream(reader);
+		readFileJSON(queryURL); 		// read JSON document 
+		reader.close();
+	}
+
 	// readFileJSON: Reads JSON and parses for .jpg links; adds downloadable links to queue data structure 
 	public static void readFileJSON(URL url) throws Exception {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
@@ -184,7 +216,7 @@ public class PhotoExtractor {
 		 // finds all .jpg links in JSON document and adds them to a queue
 		for(int i = 0; i < tokens1.length; i++) {
 			if(tokens1[i].contains("https") && tokens1[i].contains("jpg")) {
-				if(tokens1[i].contains("src") && tokens1[i].contains("https") && tokens1[i].contains("1080x1080")) {
+				if(tokens1[i].contains("src") && tokens1[i].contains("https") && tokens1[i].contains(resolution)) {
 					queue.add(tokens1[i]);
 					}
 				}
@@ -192,8 +224,8 @@ public class PhotoExtractor {
 				 
 		int size = queue.size();
 		int i = 0;
-		// loop through queue (as a stack) using delimiters to fix url
-		// iterator checks if link is already in data structure -- adds it to queue if it isnt
+		// Loop through queue (as a stack) using delimiters to fix url
+		// Iterator checks if link is already in data structure -- adds it to queue if it isnt
 		while(i < size) {
 			String [] tokens3 = queue.pop().split(delimiter2);
 			String line = tokens3[1];
@@ -239,16 +271,24 @@ public class PhotoExtractor {
 		// Finds all .jpg links in HTML document with 1080x1080 resolution and adds them to a queue
 		for(int i = 0; i < tokens1.length; i++) {
 			if(tokens1[i].contains("https") && tokens1[i].contains("jpg")) {
-				if(tokens1[i].contains("https") && tokens1[i].contains("1080x1080")) {
-					queue.add(tokens1[i]);
+				if(selection == 1) {
+					if(tokens1[i].contains("https") && tokens1[i].contains(resolution)) {
+						queue.add(tokens1[i]);
+					}
+				} else {
+					delimiter2 = "https:";
+					delimiter3 = "\"";
+					if(tokens1[i].contains("src") && tokens1[i].contains("https") && tokens1[i].contains(resolution)) {
+						queue.add(tokens1[i]);
+					}
 				}
-	    	}		 
-		} 
+			  }		 
+		}
+		
 		int size = queue.size();
 		int i = 0;
-				
-			// Loop through queue (as a stack) using delimiters to fix url
-			// iterator checks if link is already in data structure -- adds it to queue if it isnt
+		// Loop through queue (as a stack) using delimiters to fix url
+		// iterator checks if link is already in data structure -- adds it to queue if it isnt
 		while(i < size) {
 			String [] tokens3 = queue.pop().split(delimiter2);
 			line = tokens3[1];
@@ -269,9 +309,8 @@ public class PhotoExtractor {
 					break;
 				}
 			}
-				i++;	
-		}	
-		reader.close();
+			i++;	
+		}
 	}
 	
 	// parseURL: Adds removes Unicode value and replaces with it "&"; adds link to data structure -- FOR HTML DOCUMENT LINKS ONLY !!!!
@@ -284,9 +323,14 @@ public class PhotoExtractor {
 			for(int j = 0; j < tokens.length; j++) {
 				link = tokens[j];
 				link = link.replaceAll(unicode, "&");
-				htmlLinks.push(link);
+				if(selection == 1) {
+					htmlLinks.push(link);
+				} else {
+					htmlLinks.push("http:" + link);
+				}
+				
 			}	
-		}			
+		}
 		System.out.println("TOTAL LINKS: " + htmlLinks.size());			
 	}	
 		
@@ -300,8 +344,7 @@ public class PhotoExtractor {
 					URL url = new URL(htmlLinks.peek());	// ### change back to peek ###***
 					System.out.println("READ: " + htmlLinks.pop());
 					InputStream istream = url.openStream();
-					FileOutputStream out = new FileOutputStream(new File("** YOUR PHOTO FOLDER GOES HERE **"
-								+ filename + Integer.toString(num) + ".jpg"));
+					FileOutputStream out = new FileOutputStream(new File("**YOUR FOLDER HERE**" + filename + Integer.toString(num) + ".jpg"));
 					istream.transferTo(out);
 					num++;
 					out.close();
@@ -311,8 +354,7 @@ public class PhotoExtractor {
 					URL url = new URL(jsonLinks.peek());	// ### change back to peek ###***
 					System.out.println("READ: " + jsonLinks.pop());
 					InputStream istream = url.openStream();
-					FileOutputStream out = new FileOutputStream(new File("** YOUR PHOTO FOLDER GOES HERE **"
-              + filename + Integer.toString(num) + ".jpg"));
+					FileOutputStream out = new FileOutputStream(new File("**YOUR FOLDER HERE**" + filename + Integer.toString(num) + ".jpg"));
 					istream.transferTo(out);
 					num++;
 					out.close();
