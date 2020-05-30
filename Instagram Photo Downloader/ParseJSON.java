@@ -9,25 +9,24 @@
 package extractor;
 
 public class ParseJSON {
-	String json;					// holds JSON
-	String html;					// holds HTML
-	String end_cursor;	   			// holds end cursor string
-	String queryHash;				// holds end query hash
-	String profileId;				// holds id number
-	final String QUERYHASH = "44efc15d3c13342d02df0b5a9fa3d33f";	// hard coded
-	boolean hasNextPage = false; 	// default is false
-	String jsonURL = "https://www.instagram.com/graphql/query/?query_hash=";
-	String afterQueryHash = "&variables=%7B%22id%22%3A%22";
-	String afterProfileId = "%22%2C%22first%22%3A12%2C%22after%22%3A%22";
-	String afterEndCursor = "%3D%3D%22%7D";
-	String queryURL;
+	private String json;					// holds JSON
+	private String end_cursor;	   			// holds end cursor string
+	private String queryHash;				// holds end query hash
+	private String profileId;				// holds id number
+	private final String QUERYHASH = "44efc15d3c13342d02df0b5a9fa3d33f";	// hard coded
+	private boolean hasNextPage = false; 	// default is false
+	private String jsonURL = "https://www.instagram.com/graphql/query/?query_hash=";
+	private String afterQueryHash = "&variables=%7B%22id%22%3A%22";
+	private String afterProfileId = "%22%2C%22first%22%3A12%2C%22after%22%3A%22";
+	private String afterEndCursor = "%3D%3D%22%7D";
+	private String queryURL;
 	
 	ParseJSON() {
 		
 	}
 	
 	//extractQueryHash: Extracts next page hash from json -- needs to run length of program for each JSON
-	public void extractEndCursor(String file) throws Exception {	
+	void extractEndCursor(String file) throws Exception {	
 		String delimiter = "\"end_cursor\":\"";
 		
 		json = file;
@@ -38,7 +37,7 @@ public class ParseJSON {
 	}
 	
 	// checkNextPage: Extracts boolean from json -- needs to run each time json is received
-	public void checkNextPage() throws Exception {
+	void checkNextPage() throws Exception {
 		// No need to get json again b/c it is saved in a variable
 		String temp;
 		String delimiter1 = "\"has_next_page\":";
@@ -60,7 +59,7 @@ public class ParseJSON {
 	}
 	
 	// extractProfileId: Extracts id number from HTML -- only run once (at beginning from HTML document)
-	public void extractProfileId(String html) throws Exception {
+	void extractProfileId(String html) throws Exception {
 		String delimiter1 = "\"profilePage_";
 		String delimiter2 = "\"";
 		
@@ -72,7 +71,7 @@ public class ParseJSON {
 	}
 	
 	// extractQueryHash: Extracts query id/hash from .js file -- only run once (at beginning from js file)
-	public void extractQueryHash(String javascript) throws Exception {
+	void extractQueryHash(String javascript) throws Exception {
 		String delimiter1 = "void 0:s.pagination},queryId:\"";
 		String delimiter2 = "\"";
 			
@@ -85,26 +84,70 @@ public class ParseJSON {
 	}
 	
 	// constructURL: Constructs url for next query -- last thing to be done
-	public void generateURL() { 
+	void generateURL() { 
 		queryURL = jsonURL + queryHash + afterQueryHash + profileId + afterProfileId + 
 				end_cursor + afterEndCursor;
 	}
 	
+	/* GETTERS */ 
+	
+	String getJSON() {
+		return json;
+	}
+		
+	String getEndCursor() {
+		return end_cursor;
+	}
+		
+	String getQueryHash() {
+		return queryHash;
+	}
+		
+	String getProfileId() {
+		return profileId;
+	}	
+	
 	// getQueryURL: Getter for generated URL
-	public String getQueryURL() {
+	String getQueryURL() {
 		return queryURL;
 	}
 	
+	// getNextPage: Returns boolean value of hasNextPage variable 
+	boolean getNextPageValue() {
+		return hasNextPage;
+	}
+	
+	/* SETTERS */
+	
+	void setJSON(String value) {
+		json = value;
+	}
+		
+	void setEndCursor(String value) {
+		end_cursor = value;
+	}
+		
+	void setProfileId(String value) {
+		profileId = value;
+	}	
+	
 	// setQueryHash: Setter for query hash
-	public void setQueryHash(String containerValue) {
+	void setQueryHash(String containerValue) {
 		queryHash = containerValue;
 	}
 	
+	// getQueryURL: Getter for generated URL
+	void setQueryURL(String value) {
+		queryURL = value;
+	}
+	
 	// setHasNextPage: Setter for hasNextPage -- only used once in initialRequest method
-	public void setHasNextPage(boolean htmlNextPage) {
+	void setHasNextPage(boolean htmlNextPage) {
 		if(htmlNextPage == true) {
 			hasNextPage = true;
 		}
 	}
+	
+	
 
 }
