@@ -3,6 +3,8 @@
  * Reads and extracts images from HTML document
  * Extracts relevent information from HTML and JS files which is then used to create URL next page (JSON) 
  * Reads and extracts from JSON 
+ * 
+ * If all images are not saved try downloading at a lower resolution
  */
 
 package extractor;
@@ -45,27 +47,32 @@ public class PhotoExtractor {
 	static String containerValue = "";	
 	static String jsFile = ""; 
 	static String resolution;
+	static String path = "";
 
 	public static void main(String[] args) throws Exception {
 		ParseJSON parseJSON = new ParseJSON();
+		Dots dots = new Dots();
 		Scanner sc = new Scanner(System.in);
 		System.out.print("Enter IG URL: ");
 		instaURL = sc.nextLine();
-		System.out.print("Enter filename you wish to use: ");
+		System.out.println("Enter complete folder path to save your images: ");
+		path = sc.nextLine();
+		System.out.print("Enter the file name you wish to use: ");
 		filename = sc.nextLine();
 		resolutionSize(sc);
 		
 		// Initial GET request -- HTML files
-		initialRequest(parseJSON);
+		initialRequest(parseJSON, dots);
 		// Subsequent GET requests -- JSON files
-		while(parseJSON.hasNextPage == true) {
+		while(parseJSON.getNextPageValue() == true) {
 			getRequest(parseJSON);
 			readLinks(); 										
 			parseJSON.extractEndCursor(tempLine);
 			parseJSON.checkNextPage();
 			System.out.print("GENERATING URL...");	// add dots here??? another thread
-			System.out.print("URL GENERATED.\n");
 			parseJSON.generateURL();
+			dots.displayDots();
+			System.out.print("URL GENERATED.\n");			
 			Thread.sleep(2000);
 			counter++;
 			System.out.println("PAGE: " + counter);
@@ -100,7 +107,7 @@ public class PhotoExtractor {
 	}
 	
 	// initialRequest: Extracts images from HTML document; retrieves required information to generate query URL for subsequent requests
-	public static void initialRequest(ParseJSON parseJSON) throws Exception {
+	public static void initialRequest(ParseJSON parseJSON, Dots dots) throws Exception {
 		URL	html = new URL(instaURL);
 		URL jsPage = null;
 		CookieHandler.setDefault(cm);
@@ -138,9 +145,10 @@ public class PhotoExtractor {
 			extractPageContainer(parseJSON);
 			jsPage = new URL(jsFile);
 			readJS(jsPage);
+			parseJSON.extractQueryHash(page);
 			// page variable now contains .js file
-			System.out.print("GENERATING URL...");	// add dots here??? another thread
-			parseJSON.extractQueryHash(page);					
+			System.out.print("GENERATING URL...");
+			dots.displayDots();
 			parseJSON.generateURL();
 			System.out.print("URL GENERATED.\n");
 			System.out.println(parseJSON.getQueryURL());
@@ -155,7 +163,6 @@ public class PhotoExtractor {
 	// htmlNextPage: Checks if HTML document has a subsequent page 
 	public static void htmlNextPage() {
 		String findText = "\"has_next_page\":true";
-		
 		// If findText contents are in variable that mean there is a next page
 		htmlNextPage = page.contains(findText);
 	}
@@ -218,9 +225,9 @@ public class PhotoExtractor {
 			if(tokens1[i].contains("https") && tokens1[i].contains("jpg")) {
 				if(tokens1[i].contains("src") && tokens1[i].contains("https") && tokens1[i].contains(resolution)) {
 					queue.add(tokens1[i]);
-					}
 				}
-			} 
+			}
+		} 
 				 
 		int size = queue.size();
 		int i = 0;
@@ -282,7 +289,7 @@ public class PhotoExtractor {
 						queue.add(tokens1[i]);
 					}
 				}
-			  }		 
+			}		 
 		}
 		
 		int size = queue.size();
@@ -343,8 +350,8 @@ public class PhotoExtractor {
 				while(!htmlLinks.isEmpty()) {
 					URL url = new URL(htmlLinks.peek());	// ### change back to peek ###***
 					System.out.println("READ: " + htmlLinks.pop());
-					InputStream istream = url.openStream();
-					FileOutputStream out = new FileOutputStream(new File("**YOUR FOLDER HERE**" + filename + Integer.toString(num) + ".jpg"));
+					InputStream istream = url.openStream();					
+					FileOutputStream out = new FileOutputStream(new File(path + filename + Integer.toString(num) + ".jpg"));
 					istream.transferTo(out);
 					num++;
 					out.close();
@@ -354,7 +361,7 @@ public class PhotoExtractor {
 					URL url = new URL(jsonLinks.peek());	// ### change back to peek ###***
 					System.out.println("READ: " + jsonLinks.pop());
 					InputStream istream = url.openStream();
-					FileOutputStream out = new FileOutputStream(new File("**YOUR FOLDER HERE**" + filename + Integer.toString(num) + ".jpg"));
+					FileOutputStream out = new FileOutputStream(new File(path + filename + Integer.toString(num) + ".jpg"));
 					istream.transferTo(out);
 					num++;
 					out.close();
