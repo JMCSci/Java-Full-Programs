@@ -72,7 +72,7 @@ public class InstagramGUI extends Application {
 		text1.setFill(Color.RED);
 		
 		// FINAL: This will cycle through each image (preview)
-		Image images = new Image("file:/Users/jasonmoreau/Desktop/Photos/m.jpg");
+		Image images = new Image("file:**YOUR IMAGE HERE**.jpg");
 		ImageView imageView = new ImageView(images);
 		imageView.setFitHeight(250);
 		imageView.setFitWidth(250);
