@@ -2,11 +2,11 @@
 
 Application allows a user to download photos from Instagram profiles
 
-There will be two versions of this program: 
-- Command line version
-- GUI version
+There are two versions of this program: 
+- Command line version (***fully functional***)
+- GUI version (***fully functional***)
 
-In-progress: GUI (as of May 30th, 2020)
+In-progress: GUI (as of May 31th, 2020)
 
 
 -***If all images do not save, try downloading at a lower resolution***
