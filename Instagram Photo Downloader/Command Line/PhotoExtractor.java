@@ -1,4 +1,4 @@
-/* Instagram Photo Downloader
+/* Instagram Photo Downloader - Command Line version
  * Program downloads photos from Instagram profiles
  * Reads and extracts images from HTML document
  * Extracts relevent information from HTML and JS files which is then used to create URL next page (JSON) 
@@ -53,10 +53,13 @@ public class PhotoExtractor {
 		ParseJSON parseJSON = new ParseJSON();
 		Dots dots = new Dots();
 		Scanner sc = new Scanner(System.in);
-		System.out.print("Enter IG URL: ");
+		System.out.println("*-----------------------------------------*");
+		System.out.println("|                                         |");
+		System.out.println("|       Instagram Photo Downloader        |");
+		System.out.println("|                                         |");
+		System.out.println("*-----------------------------------------*");
+		System.out.print("\nEnter IG URL: ");
 		instaURL = sc.nextLine();
-		System.out.println("Enter complete folder path to save your images: ");
-		path = sc.nextLine();
 		System.out.print("Enter the file name you wish to use: ");
 		filename = sc.nextLine();
 		resolutionSize(sc);
@@ -351,7 +354,8 @@ public class PhotoExtractor {
 					URL url = new URL(htmlLinks.peek());	// ### change back to peek ###***
 					System.out.println("READ: " + htmlLinks.pop());
 					InputStream istream = url.openStream();					
-					FileOutputStream out = new FileOutputStream(new File(path + filename + Integer.toString(num) + ".jpg"));
+					FileOutputStream out = new FileOutputStream(new File("/Users/jasonmoreau/Desktop/"
+							+ "Photos/" + Integer.toString(num) + ".jpg"));
 					istream.transferTo(out);
 					num++;
 					out.close();
@@ -361,7 +365,8 @@ public class PhotoExtractor {
 					URL url = new URL(jsonLinks.peek());	// ### change back to peek ###***
 					System.out.println("READ: " + jsonLinks.pop());
 					InputStream istream = url.openStream();
-					FileOutputStream out = new FileOutputStream(new File(path + filename + Integer.toString(num) + ".jpg"));
+					FileOutputStream out = new FileOutputStream(new File("/Users/jasonmoreau/Desktop/"
+							+ "Photos/" + Integer.toString(num) + ".jpg"));
 					istream.transferTo(out);
 					num++;
 					out.close();
