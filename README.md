@@ -1,6 +1,6 @@
 # Personal Projects
 
-This repo holds all of my personal projects.
+This repo holds some of my personal projects.
 
 * Instagram Photo Downloader
 * Stock Quotes
