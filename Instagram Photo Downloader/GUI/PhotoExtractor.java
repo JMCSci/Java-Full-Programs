@@ -1,12 +1,13 @@
-/* Instagram Photo Downloader - GUI version
+/* Instagram Photo Downloader - Command Line version
  * Program downloads photos from Instagram profiles
- * Reads and extracts images from HTML document and JSON
- * Utilizes multi-threading and various data structures
+ * Reads and extracts images from HTML document
+ * Extracts relevent information from HTML and JS files which is then used to create URL next page (JSON) 
+ * Reads and extracts from JSON 
  * 
  * If all images are not saved try downloading at a lower resolution
  */
 
-package gui;
+package extractor;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -23,33 +24,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URISyntaxException;
 import java.util.ArrayDeque;
+import java.util.InputMismatchException;
 import java.util.Iterator;
 import java.util.List;
-// JAVAFX
-import javafx.application.Application;
-import javafx.stage.Stage;
-import javafx.geometry.Pos;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.Scene;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.Text;
-import javafx.stage.DirectoryChooser;
+import java.util.Scanner;
 
-public class PhotoExtractor extends Application {
-	static CookieManager cm = new CookieManager();
+public class PhotoExtractor {
 	static ArrayDeque <String> htmlLinks = new ArrayDeque<>();
 	static ArrayDeque <String> jsonLinks = new ArrayDeque<>();
 	static ArrayDeque<String> queue = new ArrayDeque<>();
@@ -58,6 +38,7 @@ public class PhotoExtractor extends Application {
 	static int counter = 1;
 	static int num = 1;
 	static int selection; 
+	static CookieManager cm = new CookieManager();
 	static String instaURL;
 	static String c = "";
 	static String tempLine = "";
@@ -67,175 +48,96 @@ public class PhotoExtractor extends Application {
 	static String jsFile = ""; 
 	static String resolution;
 	static String path = "";
-	static String prevImage = ""; 
-	static StringBuilder taText = new StringBuilder("");
-	static BorderPane bp = new BorderPane();
-	static TextArea ta = new TextArea();
-	static Text text1 = new Text();
-	static Image images;
-	static ImageView imageView = new ImageView(images);
-	static VBox vbox2 = new VBox(10);
-	static ParseJSON parseJSON = new ParseJSON();
-	static FirstRequest fr = new FirstRequest();
-	static Runnable runnable1 = (Runnable) fr;
-	static SubsequentRequest sr = new SubsequentRequest();
-	static Runnable runnable2 = (Runnable) sr;
-	
-	public static void main(String[] args) {
-		Application.launch(args);
+
+	public static void main(String[] args) throws Exception {
+		ParseJSON parseJSON = new ParseJSON();
+		Dots dots = new Dots();
+		Scanner sc = new Scanner(System.in);
+		System.out.println("*-----------------------------------------*");
+		System.out.println("|                                         |");
+		System.out.println("|       Instagram Photo Downloader        |");
+		System.out.println("|                                         |");
+		System.out.println("*-----------------------------------------*");
+		System.out.print("\nEnter IG URL: ");
+		instaURL = sc.nextLine();
+		System.out.print("Enter the complete file path you wish to save images in: ");
+		path = sc.nextLine();
+		checkPath(sc);
+		System.out.print("Enter the file name you wish to use: ");
+		filename = sc.nextLine();
+		resolutionSize(sc);
+		
+		// Initial GET request -- HTML files
+		initialRequest(parseJSON, dots);
+		// Subsequent GET requests -- JSON files
+		while(parseJSON.getNextPageValue() == true) {
+			getRequest(parseJSON);
+			readLinks(); 										
+			parseJSON.extractEndCursor(tempLine);
+			parseJSON.checkNextPage();
+			System.out.print("GENERATING URL...");	
+			parseJSON.generateURL();
+			dots.displayDots();
+			System.out.print("URL GENERATED.\n");			
+			Thread.sleep(2000);
+			counter++;
+			System.out.println("PAGE: " + counter);
+		}
+		sc.close();
 	}
 	
-	public void start(Stage primaryStage) throws Exception {
-		StackPane root = new StackPane();
-		BorderPane bp = new BorderPane();
-		HBox hbox = new HBox();
-		HBox hbox2 = new HBox(10);
-		hbox2.setAlignment(Pos.CENTER);
-			
-		MenuBar menubar = new MenuBar();
-		menubar.setPrefWidth(500);
-		Menu menu1 = new Menu("File");
-		Menu menu2 = new Menu("Help");
-		
-		MenuItem open = new MenuItem("Open");
-		MenuItem exit = new MenuItem("Exit");
-		MenuItem about = new MenuItem("About");
-		open.setDisable(true);
-		menubar.getMenus().addAll(menu1,menu2);
-		menu1.getItems().addAll(open, exit);
-		menu2.getItems().add(about);
-		hbox.getChildren().add(menubar);
-		root.getChildren().add(hbox);		// ROOT???
-		
-		// Enter Instagram profile URL
-		ta.setFont(new Font(12));
-		ta.setEditable(true);
-		taText.append("Enter Instagram profile URL --> (ex: https://www.instagram.com/nike/?hl=en)");
-		ta.setPromptText(taText.toString());
-		ta.setPrefHeight(100);
-		ta.setFocusTraversable(false);
-		
-		//  Resolution radio buttons
-		RadioButton rb1 = new RadioButton("High");
-		RadioButton rb2 = new RadioButton("Medium");
-		ToggleGroup group = new ToggleGroup();
-		rb1.setToggleGroup(group);
-		rb2.setToggleGroup(group);
-				
-		// Text: Displays steps
-		text1.setText("1. Enter the profile URL below");
-		text1.setFill(Color.RED);
-		
-		imageView.setFitHeight(250);
-		imageView.setFitWidth(250);
-		
-		vbox2.setAlignment(Pos.CENTER);
-		
-		bp.setTop(hbox);
-		bp.setBottom(ta);
-		bp.setCenter(text1);
-		
-		/*
-		 * EVENT HANDLERS
-		 */
-			
-		// Open folder
-		open.setOnAction(e -> {
-			DirectoryChooser directoryChooser = new DirectoryChooser();
-			File selectedDirectory = directoryChooser.showDialog(primaryStage);
-			if(selectedDirectory != null) {
-				filename = selectedDirectory.getAbsolutePath() + "/";
-				text1.setText("3. Select image resolution");
-				VBox vbox = new VBox(10);
-				vbox.setAlignment(Pos.CENTER);
-				hbox2.getChildren().addAll(rb1,rb2);
-				vbox.getChildren().addAll(text1, hbox2);
-				bp.setCenter(vbox);
-				// Disable open in menu bar
-				open.setDisable(true);
+	// checkFilePath: Checks if the file path exists
+	public static void checkPath(Scanner sc) {
+		String os = System.getProperty("os.name");		// gets operating system name for use with path
+		boolean pathTest = true; 
+		while(pathTest) {
+			File filePath = new File(path);
+			if(filePath.exists()) { 					// check if it ends with a forward slash
+				if(os.contains("Mac")) {	    		// UNIX
+					if(!path.endsWith("/")) {			// check if path ends with a forward slash
+						path = path + "/";
+					} 
+				} else if(os.contains("Windows")) {		// Windows
+					if(!path.endsWith("\\")) {   		// check if it ends with a backslash
+						path = path + "\\";
+					}
+				}
+				pathTest = false;
+			} else {
+				System.out.print("Path does not exist, try again: ");
+				path = sc.nextLine();
 			}
-		});
-		
-		// Radio buttons - High resolution
-		rb1.setOnAction(e -> {
-			resolution = "1080x1080";
-			text1.setText("Preview");
-			vbox2.getChildren().addAll(text1, imageView);
-			ta.setFont(new Font(10));
-			bp.setCenter(vbox2);
-			ta.setPromptText("");
-			// Initial GET request -- HTML files
+		}
+	}
+	
+	// resolutionSize: Allows user to select image resolution size
+	public static void resolutionSize(Scanner sc) {
+		while(selection != 1 || selection != 2) {
 			try {
-				//Initial Request
-				Thread thread1 = new Thread(fr);
-				thread1.start();
-			} catch (Exception e1) {
-				taText.append("ERROR\n");
-				ta.setText(taText.toString());
+				System.out.println("\nChoose image resolution size:");
+				System.out.println("-----------------------------\n");
+				System.out.println("1 - High");
+				System.out.println("2 - Medium\n");
+				System.out.print("Selection: ");
+				selection = sc.nextInt();
+				if(selection == 1) {
+					resolution = "1080x1080";
+					break;
+				} else if(selection == 2) {
+					resolution = "s640x640";
+					break;
+				}
+				System.out.println("Please enter a valid selection.");
+				continue;
+			} catch(InputMismatchException ex) {
+				System.out.println("Please enter a valid selection.");
 			}
-		});
-		
-		// Radio buttons - Medium resolution
-		rb2.setOnAction(e -> {
-			resolution = "s640x640";
-			text1.setText("Preview");
-			vbox2.getChildren().addAll(text1, imageView);
-			ta.setFont(new Font(10));
-			bp.setCenter(vbox2);
-			ta.setPromptText("");
-			// Initial GET request -- HTML files
-			try {
-				//Initial Request
-				Thread thread1 = new Thread(fr);
-				thread1.start();
-			} catch (Exception e1) {
-				taText.append("ERROR\n");
-				ta.setText(taText.toString());
-			}
-		});
-		
-		// Exit program
-		exit.setOnAction(e -> {
-			System.exit(-1);
-
-		});
-		
-		// Enter profile URL
-		ta.setOnKeyPressed(e -> {
-			if(e.getCode() == KeyCode.ENTER) {
-				instaURL = ta.getText();
-				ta.setEditable(false);
-				open.setDisable(false);
-				text1.setText("2. Select folder to save images");
-			}
-		});
-		
-		// About stage
-		about.setOnAction(e -> {
-			BorderPane pane = new BorderPane();
-			Stage stage = new Stage();
-			Scene aboutScene = new Scene(pane,200,200);
-			VBox aboutContainer = new VBox(10);
-			Text programName = new Text("Instagram Photo Downloader");
-			Text creator = new Text("Created by: Jason Moreau");
-			Text programYear = new Text("(c) 2020");
-			aboutContainer.setAlignment(Pos.CENTER);
-			aboutContainer.getChildren().addAll(programName, creator, programYear);
-			pane.setCenter(aboutContainer);
-			stage.setResizable(false);
-			stage.setScene(aboutScene);
-			stage.show();
-		});
-		
-		Scene scene = new Scene(bp, 500, 400);
-		primaryStage.setScene(scene);
-		primaryStage.setResizable(false);
-		primaryStage.setTitle("Instagram Photo Downloader");
-		primaryStage.show();
+			sc.next();
+		}	
 	}
 	
 	// initialRequest: Extracts images from HTML document; retrieves required information to generate query URL for subsequent requests
-	public static void initialRequest() throws Exception {
+	public static void initialRequest(ParseJSON parseJSON, Dots dots) throws Exception {
 		URL	html = new URL(instaURL);
 		URL jsPage = null;
 		CookieHandler.setDefault(cm);
@@ -256,6 +158,7 @@ public class PhotoExtractor extends Application {
 				break;
 			}
 			c += cook.getName() + "=" + cook.getValue() + "; ";
+
 		} 
 		// Get profile ID, end cursor, and query hash to create URL for next page
 		readFileHTML(html);
@@ -269,42 +172,44 @@ public class PhotoExtractor extends Application {
 			// Start extraction to generate URL for next page (JSON)
 			parseJSON.extractEndCursor(page);	
 			parseJSON.extractProfileId(page);
-			extractPageContainer();
+			extractPageContainer(parseJSON);
 			jsPage = new URL(jsFile);
 			readJS(jsPage);
 			parseJSON.extractQueryHash(page);
 			// page variable now contains .js file
-			taText.append("GENERATING URL...\n");
-			ta.setText(taText.toString());
+			System.out.print("GENERATING URL...");
+			dots.displayDots();
 			parseJSON.generateURL();
-			taText.append("URL GENERATED.\n");
-			ta.setText(taText.toString());
-			taText.append(parseJSON.getQueryURL() + "\n");
-			ta.setText(taText.toString());
+			System.out.print("URL GENERATED.\n");
+			System.out.println(parseJSON.getQueryURL());
 			counter++;
-			taText.append("PAGE: ");
-			ta.setText(taText.toString() + counter + "\n");
+			System.out.println("PAGE: " + counter);
 			reader.close();
-		}	
+			Thread.sleep(2000);
+		}
+		
 	}
-
-		// htmlNextPage: Checks if HTML document has a subsequent page 
+	
+	// htmlNextPage: Checks if HTML document has a subsequent page 
 	public static void htmlNextPage() {
 		String findText = "\"has_next_page\":true";
 		// If findText contents are in variable that mean there is a next page
 		htmlNextPage = page.contains(findText);
 	}
-		
+	
 	// extractContainerPage: Parse HTML for .js file containing query hash -- found in HTML document
-	public static void extractPageContainer() throws Exception {
+	public static void extractPageContainer(ParseJSON parseJSON) throws Exception {
 		String delimiter1 = "\"/static/bundles/metro/ProfilePageContainer.js/";
-		String delimiter2 = ".js\"";	
+		String delimiter2 = ".js\"";
+			
 		String [] tokens1 = page.split(delimiter1);
-		String [] tokens2 = tokens1[1].split(delimiter2);			
+		String [] tokens2 = tokens1[1].split(delimiter2);
+			
 		containerValue = tokens2[0];
+	
 		jsFile = "https://instagram.com/static/bundles/metro/ProfilePageContainer.js/" + containerValue + ".js";
 	}
-			
+		
 	// readJS: Reads Javascript file (.js) to string variable
 	public static void readJS(URL url) throws Exception {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
@@ -316,9 +221,9 @@ public class PhotoExtractor extends Application {
 		}
 		reader.close();
 	}
-				
+			
 	// getRequest: GET request for JSON file 
-	public static void getRequest() throws Exception {
+	public static void getRequest(ParseJSON parseJSON) throws Exception {
 		instaURL = parseJSON.getQueryURL();
 		URL queryURL = new URL(instaURL);
 		BufferedReader reader = new BufferedReader(new InputStreamReader(queryURL.openStream()));
@@ -343,9 +248,9 @@ public class PhotoExtractor extends Application {
 		while ((line1 = reader.readLine()) != null) {
 			page += line1;
 		}
-		    
+			    
 		String [] tokens1 = page.split(delimiter1);
-		// finds all .jpg links in JSON document and adds them to a queue
+		 // finds all .jpg links in JSON document and adds them to a queue
 		for(int i = 0; i < tokens1.length; i++) {
 			if(tokens1[i].contains("https") && tokens1[i].contains("jpg")) {
 				if(tokens1[i].contains("src") && tokens1[i].contains("https") && tokens1[i].contains(resolution)) {
@@ -353,7 +258,7 @@ public class PhotoExtractor extends Application {
 				}
 			}
 		} 
-					 
+				 
 		int size = queue.size();
 		int i = 0;
 		// Loop through queue (as a stack) using delimiters to fix url
@@ -380,13 +285,11 @@ public class PhotoExtractor extends Application {
 			}
 			i++;	
 		}
-		taText.append("\nTOTAL LINKS: " + Integer.toString(jsonLinks.size()) + "\n");
-		ta.setText(taText.toString());
+		System.out.println("TOTAL LINKS: " + jsonLinks.size());
 		reader.close();
 	}
-
-				
-		// readFileHTML: Reads HTML and adds downloadable links to queue data structure
+			
+	// readFileHTML: Reads HTML and adds downloadable links to queue data structure
 	public static void readFileHTML(URL url) throws Exception {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
 		String line = "";
@@ -394,14 +297,14 @@ public class PhotoExtractor extends Application {
 		String delimiter2 = "url\":\"";
 		String delimiter3 = "\"";
 		page = "";
-			
+		
 		// Reads HTML document -- adds it to string
 		while ((line = reader.readLine()) != null) {
 			page += line;
 		}
 		
 		String [] tokens1 = page.split(delimiter1);
-				
+			
 		// Finds all .jpg links in HTML document with 1080x1080 resolution and adds them to a queue
 		for(int i = 0; i < tokens1.length; i++) {
 			if(tokens1[i].contains("https") && tokens1[i].contains("jpg")) {
@@ -418,7 +321,7 @@ public class PhotoExtractor extends Application {
 				}
 			}		 
 		}
-			
+		
 		int size = queue.size();
 		int i = 0;
 		// Loop through queue (as a stack) using delimiters to fix url
@@ -446,7 +349,7 @@ public class PhotoExtractor extends Application {
 			i++;	
 		}
 	}
-		
+	
 	// parseURL: Adds removes Unicode value and replaces with it "&"; adds link to data structure -- FOR HTML DOCUMENT LINKS ONLY !!!!
 	public static void parseURL() throws Exception {
 		String delimeter4 = "[\"]";
@@ -461,60 +364,46 @@ public class PhotoExtractor extends Application {
 					htmlLinks.push(link);
 				} else {
 					htmlLinks.push("http:" + link);
-				}			
+				}
+				
 			}	
 		}
-		taText.append("\nTOTAL LINKS: " + Integer.toString(htmlLinks.size()) + "\n");
-		ta.setText(taText.toString());		
+		System.out.println("TOTAL LINKS: " + htmlLinks.size());			
 	}	
-			
+		
 	// readLinks: Reads links from array and outputs as a JPG file
-	public static void readLinks() throws IOException, URISyntaxException {		
-		taText.append("\n*** LINKS ***\n");
-		ta.setText(taText.toString());
+	public static void readLinks() throws IOException, URISyntaxException {			
+		System.out.println("\n*** LINKS ***\n");
 		// read links
 		try {
 			if(!htmlLinks.isEmpty()) {		// reads data structures -- HTML
 				while(!htmlLinks.isEmpty()) {
 					URL url = new URL(htmlLinks.peek());	
-					taText.append("READ: " + htmlLinks.peek() + "\n");
-					ta.setText(taText.toString());
-					ta.end();
-					htmlLinks.pop();
+					System.out.println("READ: " + htmlLinks.pop());
 					InputStream istream = url.openStream();					
-					FileOutputStream out = new FileOutputStream(new File(filename + Integer.toString(num) + ".jpg"));
+					FileOutputStream out = new FileOutputStream(new File(path + Integer.toString(num) + ".jpg"));
 					istream.transferTo(out);
-					prevImage = "file:" + filename + Integer.toString(num) + ".jpg";
-					images = new Image(prevImage); 
-					imageView.setImage(images);
 					num++;
 					out.close();
 				}
-			} else {						// reads queue data structures -- JSON 
+			} else {					 
 				while(!jsonLinks.isEmpty()) {
-					URL url = new URL(jsonLinks.peek());
-					taText.append("READ: " + jsonLinks.peek() + "\n");						
-					ta.setText(taText.toString());
-					ta.end();
-					jsonLinks.pop();
+					URL url = new URL(jsonLinks.peek());	
+					System.out.println("READ: " + jsonLinks.pop());
 					InputStream istream = url.openStream();
-					FileOutputStream out = new FileOutputStream(new File(filename + Integer.toString(num) + ".jpg"));
+					FileOutputStream out = new FileOutputStream(new File(path + Integer.toString(num) + ".jpg"));
 					istream.transferTo(out);
-					prevImage = "file:" + filename + Integer.toString(num) + ".jpg";
-					images = new Image(prevImage); 
-					imageView.setImage(images);
 					num++;
 					out.close();
 				}
 			}
 		} catch (IOException ex) {
-			taText.append("ERROR \n");
-			ta.setText(taText.toString());
+			System.out.println("ERROR");
+			ex.printStackTrace();
 		}
-		taText.append("\nPAGE COMPLETE\n");
-		ta.setText(taText.toString());	
+		System.out.println("\nPAGE COMPLETE\n");	
 	}	
-		
+	
 	// readStream: Reads open stream
 	public static void readStream(BufferedReader stream) throws Exception {
 		String line = "";
@@ -524,60 +413,5 @@ public class PhotoExtractor extends Application {
 		}
 		stream.close();
 	}
-}
-
-// Thread for first GET request
-class FirstRequest extends PhotoExtractor implements Runnable {
-	
-	FirstRequest() {
 		
-	}
-	
-	public void run() {
-		try {
-			initialRequest();
-			Thread.sleep(2000);
-			//Subsequent Request
-		} catch (Exception e) {
-			taText.append("ERROR\n");
-			ta.setText(taText.toString());
-		}
-		Thread thread2 = new Thread(sr);
-		thread2.start();
-	}
-	
 }
-
-// Thread for all subsequent GET requests
-class SubsequentRequest extends PhotoExtractor implements Runnable {
-	
-	SubsequentRequest() {
-		
-	}
-	 
-	public void run() {
-		while(parseJSON.getNextPageValue() == true) {
-			try {
-				getRequest();
-				readLinks(); 										
-				parseJSON.extractEndCursor(tempLine);
-				parseJSON.checkNextPage();
-				taText.append("GENERATING URL...\n");
-				ta.setText(taText.toString());
-				parseJSON.generateURL();
-				taText.append(parseJSON.getQueryURL() + "\n");
-				ta.setText(taText.toString());
-				taText.append("URL GENERATED.\n");
-				ta.setText(taText.toString());			
-				counter++;
-				taText.append("PAGE: ");
-				ta.setText(taText.toString() + Integer.toString(counter) + "\n");
-				Thread.sleep(2000);
-			} catch (Exception e) {
-				taText.append("ERROR\n");
-				ta.setText(taText.toString());
-			}
-		}
-	}
-}
-
