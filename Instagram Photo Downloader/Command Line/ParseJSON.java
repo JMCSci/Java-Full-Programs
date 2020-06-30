@@ -141,6 +141,10 @@ public class ParseJSON {
 		queryURL = value;
 	}
 	
+	void setNextPage(boolean newValue) {
+		hasNextPage = newValue;
+	}
+	
 	// setHasNextPage: Setter for hasNextPage -- only used once in initialRequest method
 	void setHasNextPage(boolean htmlNextPage) {
 		if(htmlNextPage == true) {
