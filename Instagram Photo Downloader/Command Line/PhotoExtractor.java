@@ -57,23 +57,10 @@ public class PhotoExtractor {
 		getProfile(sc);
 		getPath(sc);
 		checkPath(sc);
-		getFilename(sc);
 		resolutionSize(sc);
-		sc.close();					// Close scanner
+		sc.close();								// Close scanner
 		initialRequest(parseJSON, dots);		// Initial GET request -- HTML files
-		while(parseJSON.getNextPageValue() == true) {	// Subsequent GET requests -- JSON files
-			getRequest(parseJSON);
-			readLinks(); 										
-			parseJSON.extractEndCursor(tempLine);
-			parseJSON.checkNextPage();
-			System.out.print("GENERATING URL...");	
-			parseJSON.generateURL();
-			dots.displayDots();
-			System.out.print("URL GENERATED.\n");			
-			Thread.sleep(2000);
-			counter++;
-			System.out.println("PAGE: " + counter);
-		}
+		subsequentRequests(parseJSON, dots);	// Subsequent GET requests -- JSON files
 	}
 	
 	public static void programTitle() {
@@ -92,11 +79,6 @@ public class PhotoExtractor {
 	public static void getPath(Scanner sc) {
 		System.out.print("Enter the complete file path you wish to save images in: ");
 		path = sc.nextLine();
-	}
-	
-	public static void getFilename(Scanner sc) {
-		System.out.print("Enter the file name you wish to use: ");
-		filename = sc.nextLine();
 	}
 	
 	// checkFilePath: Checks if the file path exists
@@ -160,7 +142,7 @@ public class PhotoExtractor {
 		conn.setRequestProperty("Cookies", c);
 		conn.addRequestProperty("User-Agent", "Mozilla/5.0");
 		conn.getContent();
-		// ## COOKIES ## 
+		// ## COOKIES ## -- Not required
 		cm.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
 		CookieStore cs = cm.getCookieStore();
 		List<HttpCookie> cookieList = cs.getCookies(); 
@@ -202,6 +184,23 @@ public class PhotoExtractor {
 		}
 		
 	}
+	
+	public static void subsequentRequests(ParseJSON parseJSON, Dots dots) throws Exception {
+		while(parseJSON.getNextPageValue() == true) {	
+			getRequest(parseJSON);
+			readLinks(); 										
+			parseJSON.extractEndCursor(tempLine);
+			parseJSON.checkNextPage();
+			System.out.print("GENERATING URL...");	
+			parseJSON.generateURL();
+			dots.displayDots();
+			System.out.print("URL GENERATED.\n");			
+			Thread.sleep(2000);
+			counter++;
+			System.out.println("PAGE: " + counter);
+		}
+	}
+	
 	
 	// htmlNextPage: Checks if HTML document has a subsequent page 
 	public static void htmlNextPage() {
@@ -248,6 +247,69 @@ public class PhotoExtractor {
 		readFileJSON(queryURL); 		// read JSON document 
 		reader.close();
 	}
+	
+	// readFileHTML: Reads HTML and adds downloadable links to queue data structure
+	public static void readFileHTML(URL url) throws Exception {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+		String line = "";
+		String delimiter1 = "[{}]";
+		String delimiter2 = "url\":\"";
+		String delimiter3 = "\"";
+		page = "";
+			
+		// Reads HTML document -- adds it to string
+		while ((line = reader.readLine()) != null) {
+			page += line;
+		}
+			
+		String [] tokens1 = page.split(delimiter1);
+				
+		// Finds all .jpg links in HTML document with 1080x1080 resolution and adds them to a queue
+		for(int i = 0; i < tokens1.length; i++) {
+			if(tokens1[i].contains("https") && tokens1[i].contains("jpg")) {
+				if(selection == 1) {
+					if(tokens1[i].contains("https") && tokens1[i].contains(resolution)) {
+						queue.add(tokens1[i]);
+					}
+				} else {
+					delimiter2 = "https:";
+					delimiter3 = "\"";
+					if(tokens1[i].contains("src") && tokens1[i].contains("https") && tokens1[i].contains(resolution)) {
+						queue.add(tokens1[i]);
+					}
+				}
+			}		 
+		}
+			
+		int size = queue.size();
+		int i = 0;
+		// Loop through queue (as a stack) using delimiters to fix url
+		// iterator checks if link is already in data structure -- adds it to queue if it isnt
+		while(i < size) {
+			String [] tokens3 = queue.pop().split(delimiter2);
+			line = tokens3[1];
+			String [] tokens4 = line.split(delimiter3);
+			String link = tokens4[0];
+			if(finalQ.isEmpty()) {
+				finalQ.add(link);
+				i++;
+				continue;
+			}
+			Iterator<String> iterator = finalQ.iterator();
+			while(iterator.hasNext()) {
+				String temp = iterator.next();
+				if(link.contains(temp)) {
+					break;
+				} else {
+					finalQ.push(link);
+					break;
+				}
+			}
+			i++;	
+		}
+	}
+	
+	
 
 	// readFileJSON: Reads JSON and parses for .jpg links; adds downloadable links to queue data structure 
 	public static void readFileJSON(URL url) throws Exception {
@@ -275,7 +337,7 @@ public class PhotoExtractor {
 		int size = queue.size();
 		int i = 0;
 		// Loop through queue (as a stack) using delimiters to fix url
-		// Iterator checks if link is already in data structure -- adds it to queue if it isnt
+		// Iterator checks if link is already in data structure -- adds it to queue if it isnt - could use a Set data structure
 		while(i < size) {
 			String [] tokens3 = queue.pop().split(delimiter2);
 			String line = tokens3[1];
@@ -286,13 +348,13 @@ public class PhotoExtractor {
 					i++;
 					continue;
 				}
-			Iterator<String> iterator = jsonLinks.iterator();
+			Iterator<String> iterator = jsonLinks.iterator();		// checks against queue
 			while(iterator.hasNext()) {
 				String temp = iterator.next();
-				if(link.contains(temp)) {
+				if(link.contains(temp)) {							// if link is in queue, skip it
 					break;
 				} else {
-					jsonLinks.push(link);
+					jsonLinks.push(link);							// if link is not in queue, add it
 					break;
 				}
 			}
@@ -300,67 +362,6 @@ public class PhotoExtractor {
 		}
 		System.out.println("TOTAL LINKS: " + jsonLinks.size());
 		reader.close();
-	}
-			
-	// readFileHTML: Reads HTML and adds downloadable links to queue data structure
-	public static void readFileHTML(URL url) throws Exception {
-		BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
-		String line = "";
-		String delimiter1 = "[{}]";
-		String delimiter2 = "url\":\"";
-		String delimiter3 = "\"";
-		page = "";
-		
-		// Reads HTML document -- adds it to string
-		while ((line = reader.readLine()) != null) {
-			page += line;
-		}
-		
-		String [] tokens1 = page.split(delimiter1);
-			
-		// Finds all .jpg links in HTML document with 1080x1080 resolution and adds them to a queue
-		for(int i = 0; i < tokens1.length; i++) {
-			if(tokens1[i].contains("https") && tokens1[i].contains("jpg")) {
-				if(selection == 1) {
-					if(tokens1[i].contains("https") && tokens1[i].contains(resolution)) {
-						queue.add(tokens1[i]);
-					}
-				} else {
-					delimiter2 = "https:";
-					delimiter3 = "\"";
-					if(tokens1[i].contains("src") && tokens1[i].contains("https") && tokens1[i].contains(resolution)) {
-						queue.add(tokens1[i]);
-					}
-				}
-			}		 
-		}
-		
-		int size = queue.size();
-		int i = 0;
-		// Loop through queue (as a stack) using delimiters to fix url
-		// iterator checks if link is already in data structure -- adds it to queue if it isnt
-		while(i < size) {
-			String [] tokens3 = queue.pop().split(delimiter2);
-			line = tokens3[1];
-			String [] tokens4 = line.split(delimiter3);
-			String link = tokens4[0];
-			if(finalQ.isEmpty()) {
-				finalQ.add(link);
-				i++;
-				continue;
-			}
-			Iterator<String> iterator = finalQ.iterator();
-			while(iterator.hasNext()) {
-				String temp = iterator.next();
-				if(link.contains(temp)) {
-					break;
-				} else {
-					finalQ.push(link);
-					break;
-				}
-			}
-			i++;	
-		}
 	}
 	
 	// parseURL: Adds removes Unicode value and replaces with it "&"; adds link to data structure -- FOR HTML DOCUMENT LINKS ONLY !!!!
@@ -391,20 +392,28 @@ public class PhotoExtractor {
 		try {
 			if(!htmlLinks.isEmpty()) {		// reads data structures -- HTML
 				while(!htmlLinks.isEmpty()) {
-					URL url = new URL(htmlLinks.peek());	
+					URL url = new URL(htmlLinks.peek());
+					//
+					String tempLink = htmlLinks.peek();  // save link to string
+					getFilename(tempLink);
+					//
 					System.out.println("READ: " + htmlLinks.pop());
 					InputStream istream = url.openStream();					
-					FileOutputStream out = new FileOutputStream(new File(path + Integer.toString(num) + ".jpg"));
+					FileOutputStream out = new FileOutputStream(new File(path + filename));
 					istream.transferTo(out);
 					num++;
 					out.close();
 				}
 			} else {					 
 				while(!jsonLinks.isEmpty()) {
-					URL url = new URL(jsonLinks.peek());	
+					URL url = new URL(jsonLinks.peek());
+					//
+					String tempLink = jsonLinks.peek();
+					getFilename(tempLink);
+					//
 					System.out.println("READ: " + jsonLinks.pop());
 					InputStream istream = url.openStream();
-					FileOutputStream out = new FileOutputStream(new File(path + Integer.toString(num) + ".jpg"));
+					FileOutputStream out = new FileOutputStream(new File(path + filename));
 					istream.transferTo(out);
 					num++;
 					out.close();
@@ -416,6 +425,16 @@ public class PhotoExtractor {
 		}
 		System.out.println("\nPAGE COMPLETE\n");	
 	}	
+	
+	public static void getFilename(String tempLink) {
+		String str = tempLink;
+		String delimeter1 = resolution;
+		String delimeter2 = "[?]";
+		String [] tokens1 = str.split(delimeter1);
+		String filename1 = tokens1[1];
+		String [] tokens2 = filename1.split(delimeter2);
+		filename = tokens2[0];
+	}
 	
 	// readStream: Reads open stream
 	public static void readStream(BufferedReader stream) throws Exception {
