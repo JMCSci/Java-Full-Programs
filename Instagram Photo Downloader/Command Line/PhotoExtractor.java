@@ -11,6 +11,7 @@ package extractor;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -22,7 +23,6 @@ import java.net.CookieStore;
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 import java.util.InputMismatchException;
 import java.util.Iterator;
@@ -48,6 +48,9 @@ public class PhotoExtractor {
 	static String jsFile = ""; 
 	static String resolution;
 	static String path = "";
+	static String imageName = "";
+	static boolean readLast = false;
+	static boolean imageDuplicate = false;
 
 	public static void main(String[] args) throws Exception {
 		ParseJSON parseJSON = new ParseJSON();
@@ -60,7 +63,10 @@ public class PhotoExtractor {
 		resolutionSize(sc);
 		sc.close();								// Close scanner
 		initialRequest(parseJSON, dots);		// Initial GET request -- HTML files
-		subsequentRequests(parseJSON, dots);	// Subsequent GET requests -- JSON files
+		if(parseJSON.getNextPageValue() == true) {
+			subsequentRequests(parseJSON, dots);	// Subsequent GET requests -- JSON files	
+		}
+		System.out.println("DOWNLOAD COMPLETE");
 	}
 	
 	public static void programTitle() {
@@ -170,34 +176,45 @@ public class PhotoExtractor {
 			extractPageContainer(parseJSON);
 			jsPage = new URL(jsFile);
 			readJS(jsPage);
-			parseJSON.extractQueryHash(page);
-			// page variable now contains .js file
-			System.out.print("GENERATING URL...");
-			dots.displayDots();
-			parseJSON.generateURL();
-			System.out.print("URL GENERATED.\n");
-			System.out.println(parseJSON.getQueryURL());
-			counter++;
-			System.out.println("PAGE: " + counter);
-			reader.close();
-			Thread.sleep(2000);
+			if(imageDuplicate != true) {
+				parseJSON.extractQueryHash(page);
+				// page variable now contains .js file
+				System.out.print("GENERATING URL...");
+				dots.displayDots();
+				parseJSON.generateURL();
+				System.out.print("URL GENERATED.\n");
+//				System.out.println(parseJSON.getQueryURL());		*** THIS WILL HAVE TO COME OUT ***
+				counter++;
+				System.out.println("PAGE: " + counter);
+				reader.close();
+				Thread.sleep(2000);
+			} else {
+				parseJSON.setNextPage(false);
+			}
+			
 		}
 		
 	}
 	
 	public static void subsequentRequests(ParseJSON parseJSON, Dots dots) throws Exception {
-		while(parseJSON.getNextPageValue() == true) {	
-			getRequest(parseJSON);
-			readLinks(); 										
-			parseJSON.extractEndCursor(tempLine);
-			parseJSON.checkNextPage();
-			System.out.print("GENERATING URL...");	
-			parseJSON.generateURL();
-			dots.displayDots();
-			System.out.print("URL GENERATED.\n");			
-			Thread.sleep(2000);
-			counter++;
-			System.out.println("PAGE: " + counter);
+		while(parseJSON.getNextPageValue() == true) {	// if there is a next page continue
+			if(imageDuplicate != true) {
+				getRequest(parseJSON);
+				readLinks(); 	
+				if(imageDuplicate == true) {
+					break;
+				}
+				parseJSON.extractEndCursor(tempLine);
+				parseJSON.checkNextPage();
+				System.out.print("GENERATING URL...");	
+				parseJSON.generateURL();
+				dots.displayDots();
+				System.out.print("URL GENERATED.\n");			
+				counter++;
+				System.out.println("PAGE: " + counter);
+			} else {
+				break;
+			}
 		}
 	}
 	
@@ -205,7 +222,6 @@ public class PhotoExtractor {
 	// htmlNextPage: Checks if HTML document has a subsequent page 
 	public static void htmlNextPage() {
 		String findText = "\"has_next_page\":true";
-		// If findText contents are in variable that mean there is a next page
 		htmlNextPage = page.contains(findText);
 	}
 	
@@ -360,7 +376,8 @@ public class PhotoExtractor {
 			}
 			i++;	
 		}
-		System.out.println("TOTAL LINKS: " + jsonLinks.size());
+		System.out.println("\n--- RETRIEVING IMAGES --- ");
+//		System.out.println("TOTAL IMAGES: " + jsonLinks.size());		*** TAKE THIS OUT ***
 		reader.close();
 	}
 	
@@ -382,58 +399,109 @@ public class PhotoExtractor {
 				
 			}	
 		}
-		System.out.println("TOTAL LINKS: " + htmlLinks.size());			
+//		System.out.println("--- RETRIEVING IMAGES --- ");
+//		System.out.println("TOTAL IMAGES: " + htmlLinks.size());	*** TAKE THIS OUT ***			
 	}	
 		
 	// readLinks: Reads links from array and outputs as a JPG file
-	public static void readLinks() throws IOException, URISyntaxException {			
-		System.out.println("\n*** LINKS ***\n");
+	public static void readLinks() throws Exception {		
+//		System.out.println("\n*** LINKS ***\n");					*** THIS HAS TO COME OUT ***
 		// read links
 		try {
 			if(!htmlLinks.isEmpty()) {		// reads data structures -- HTML
 				while(!htmlLinks.isEmpty()) {
 					URL url = new URL(htmlLinks.peek());
-					//
-					String tempLink = htmlLinks.peek();  // save link to string
+					String tempLink = htmlLinks.pop();  // save link to string
 					getFilename(tempLink);
-					//
-					System.out.println("READ: " + htmlLinks.pop());
-					InputStream istream = url.openStream();					
-					FileOutputStream out = new FileOutputStream(new File(path + filename));
-					istream.transferTo(out);
-					num++;
-					out.close();
+					if(readLast == false) {
+						boolean fileExists;
+						fileExists = lastImage();
+						readLast = true;
+						if(fileExists == true) {			// update file with new image link
+							System.out.println("\n--- RETRIEVING LATEST IMAGES --- ");
+							updateFile();
+						}
+					}
+					if(imageName.contains(filename) == true) {	// 	 checks filename against imagefile					
+						imageDuplicate = true;
+						break;
+					} else {
+//						System.out.println("READ: " + htmlLinks.pop());			*** THIS HAS TO COME OUT ***
+						InputStream istream = url.openStream();					
+						FileOutputStream out = new FileOutputStream(new File(path + filename));
+						istream.transferTo(out);
+						num++;
+						out.close();
+					}
 				}
-			} else {					 
+			} else {	
 				while(!jsonLinks.isEmpty()) {
 					URL url = new URL(jsonLinks.peek());
-					//
-					String tempLink = jsonLinks.peek();
+					String tempLink = jsonLinks.pop();
 					getFilename(tempLink);
-					//
-					System.out.println("READ: " + jsonLinks.pop());
-					InputStream istream = url.openStream();
-					FileOutputStream out = new FileOutputStream(new File(path + filename));
-					istream.transferTo(out);
-					num++;
-					out.close();
+					if(readLast == false) {
+						lastImage();
+						readLast = true;
+					}
+					if(imageName.contains(filename) == true) {	// 						
+						imageDuplicate = true;
+						break;
+					} else {
+//						System.out.println("READ: " + htmlLinks.pop());			*** THIS HAS TO COME OUT ***
+						InputStream istream = url.openStream();
+						FileOutputStream out = new FileOutputStream(new File(path + filename));
+						istream.transferTo(out);
+						num++;
+						out.close();
+					}
+					
 				}
 			}
 		} catch (IOException ex) {
 			System.out.println("ERROR");
 			ex.printStackTrace();
-		}
+		} 
 		System.out.println("\nPAGE COMPLETE\n");	
 	}	
 	
 	public static void getFilename(String tempLink) {
 		String str = tempLink;
-		String delimeter1 = resolution;
+		String delimeter1 = resolution + "/";
 		String delimeter2 = "[?]";
 		String [] tokens1 = str.split(delimeter1);
 		String filename1 = tokens1[1];
 		String [] tokens2 = filename1.split(delimeter2);
 		filename = tokens2[0];
+	}
+	
+	/* This method is only used once */
+	public static boolean lastImage() throws Exception {
+		// if lastImage file does not exist, create it and add the name of first image read
+		File file = new File(path + "log.dat");
+		if(file.exists() == true) {
+			FileInputStream in = new FileInputStream(path + "log.dat");
+			byte [] sByte = new byte [filename.length()];		// length of the filename (for now)
+			in.read(sByte);
+			imageName = new String(sByte);						// save image name to variable
+			in.close();
+			return true;
+		} else {
+			FileOutputStream out = new FileOutputStream(path + "log.dat");
+			byte [] sByte = new byte [filename.length()];
+			sByte = filename.getBytes();
+			out.write(sByte);
+			out.close();
+			return false;
+		}
+	}
+	
+	// overwriteFile: Overwrites file with last saved image -- save point
+	public static void updateFile() throws Exception {
+		FileOutputStream out = new FileOutputStream(path + "log.dat");
+		byte [] sByte = new byte [filename.length()];
+		sByte = filename.getBytes();
+		out.write(sByte);
+		out.close();
 	}
 	
 	// readStream: Reads open stream
