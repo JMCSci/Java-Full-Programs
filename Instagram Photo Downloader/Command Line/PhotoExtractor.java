@@ -53,26 +53,20 @@ public class PhotoExtractor {
 		ParseJSON parseJSON = new ParseJSON();
 		Dots dots = new Dots();
 		Scanner sc = new Scanner(System.in);
-		System.out.println("*-----------------------------------------*");
-		System.out.println("|                                         |");
-		System.out.println("|       Instagram Photo Downloader        |");
-		System.out.println("|                                         |");
-		System.out.println("*-----------------------------------------*");
-		System.out.print("\nEnter IG URL: ");
-		instaURL = sc.nextLine();
-		System.out.print("Enter the file name you wish to use: ");
-		filename = sc.nextLine();
+		programTitle();
+		getProfile(sc);
+		getPath(sc);
+		checkPath(sc);
+		getFilename(sc);
 		resolutionSize(sc);
-		
-		// Initial GET request -- HTML files
-		initialRequest(parseJSON, dots);
-		// Subsequent GET requests -- JSON files
-		while(parseJSON.getNextPageValue() == true) {
+		sc.close();					// Close scanner
+		initialRequest(parseJSON, dots);		// Initial GET request -- HTML files
+		while(parseJSON.getNextPageValue() == true) {	// Subsequent GET requests -- JSON files
 			getRequest(parseJSON);
 			readLinks(); 										
 			parseJSON.extractEndCursor(tempLine);
 			parseJSON.checkNextPage();
-			System.out.print("GENERATING URL...");	// add dots here??? another thread
+			System.out.print("GENERATING URL...");	
 			parseJSON.generateURL();
 			dots.displayDots();
 			System.out.print("URL GENERATED.\n");			
@@ -80,7 +74,53 @@ public class PhotoExtractor {
 			counter++;
 			System.out.println("PAGE: " + counter);
 		}
-		sc.close();
+	}
+	
+	public static void programTitle() {
+		System.out.println("*-----------------------------------------*");
+		System.out.println("|                                         |");
+		System.out.println("|       Instagram Photo Downloader        |");
+		System.out.println("|                                         |");
+		System.out.println("*-----------------------------------------*");
+	}
+	
+	public static void getProfile(Scanner sc) {
+		System.out.print("\nEnter IG URL: ");
+		instaURL = sc.nextLine();
+	}
+	
+	public static void getPath(Scanner sc) {
+		System.out.print("Enter the complete file path you wish to save images in: ");
+		path = sc.nextLine();
+	}
+	
+	public static void getFilename(Scanner sc) {
+		System.out.print("Enter the file name you wish to use: ");
+		filename = sc.nextLine();
+	}
+	
+	// checkFilePath: Checks if the file path exists
+	public static void checkPath(Scanner sc) {
+		String os = System.getProperty("os.name");		// gets operating system name for use with path
+		boolean pathTest = true; 
+		while(pathTest) {
+			File filePath = new File(path);
+			if(filePath.exists()) { 					// check if it ends with a forward slash
+				if(os.contains("Mac")) {	    		// UNIX
+					if(!path.endsWith("/")) {			// check if path ends with a forward slash
+						path = path + "/";
+					} 
+				} else if(os.contains("Windows")) {		// Windows
+					if(!path.endsWith("\\")) {   		// check if it ends with a backslash
+						path = path + "\\";
+					}
+				}
+				pathTest = false;
+			} else {
+				System.out.print("Path does not exist, try again: ");
+				path = sc.nextLine();
+			}
+		}
 	}
 	
 	// resolutionSize: Allows user to select image resolution size
@@ -351,22 +391,20 @@ public class PhotoExtractor {
 		try {
 			if(!htmlLinks.isEmpty()) {		// reads data structures -- HTML
 				while(!htmlLinks.isEmpty()) {
-					URL url = new URL(htmlLinks.peek());	// ### change back to peek ###***
+					URL url = new URL(htmlLinks.peek());	
 					System.out.println("READ: " + htmlLinks.pop());
 					InputStream istream = url.openStream();					
-					FileOutputStream out = new FileOutputStream(new File("/Users/jasonmoreau/Desktop/"
-							+ "Photos/" + Integer.toString(num) + ".jpg"));
+					FileOutputStream out = new FileOutputStream(new File(path + Integer.toString(num) + ".jpg"));
 					istream.transferTo(out);
 					num++;
 					out.close();
 				}
-			} else {						// reads queue data structures -- JSON 
+			} else {					 
 				while(!jsonLinks.isEmpty()) {
-					URL url = new URL(jsonLinks.peek());	// ### change back to peek ###***
+					URL url = new URL(jsonLinks.peek());	
 					System.out.println("READ: " + jsonLinks.pop());
 					InputStream istream = url.openStream();
-					FileOutputStream out = new FileOutputStream(new File("/Users/jasonmoreau/Desktop/"
-							+ "Photos/" + Integer.toString(num) + ".jpg"));
+					FileOutputStream out = new FileOutputStream(new File(path + Integer.toString(num) + ".jpg"));
 					istream.transferTo(out);
 					num++;
 					out.close();
