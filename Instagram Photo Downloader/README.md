@@ -1,8 +1,7 @@
 # Instagram Photo Downloader
 
-
-#### Updated -  06/30/20 -- Added the ability to only download the most recent images (Command Line Version).   
 #### Updated -  07/01/20 -- Added download progress bar (Command Line Version). 
+#### Updated -  06/30/20 -- Added the ability to only download the most recent images (Command Line Version).   
 <br>   
 Application allows a user to download photos from Instagram profiles. 
 
