@@ -405,7 +405,7 @@ public class PhotoExtractor {
 	public static void readLinks() throws Exception {
 		int len = 0;												// **
 		int count = 1;												// **
-		ProgressBar bar = new ProgressBar();
+		ProgressBar progressBar = new ProgressBar();
 //		System.out.println("\n*** LINKS ***\n");					*** THIS HAS TO COME OUT ***
 		// read links
 		try {
@@ -435,12 +435,12 @@ public class PhotoExtractor {
 						num++;
 						out.close();
 					}
-					bar.displayBar(len, count);
+					progressBar.display(len, count);
 					count++;												// **
 				}
 			} else {	
+				len = jsonLinks.size();									// **		
 				while(!jsonLinks.isEmpty()) {
-					len = jsonLinks.size();									// **				
 					URL url = new URL(jsonLinks.peek());
 					String tempLink = jsonLinks.pop();
 					getFilename(tempLink);
@@ -459,7 +459,7 @@ public class PhotoExtractor {
 						num++;
 						out.close();
 					}
-					bar.displayBar(len, count);
+					progressBar.display(len, count);
 					count++;												// **
 				}
 			}
