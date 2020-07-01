@@ -183,7 +183,6 @@ public class PhotoExtractor {
 				dots.displayDots();
 				parseJSON.generateURL();
 				System.out.print("URL GENERATED.\n");
-//				System.out.println(parseJSON.getQueryURL());		*** THIS WILL HAVE TO COME OUT ***
 				counter++;
 				System.out.println("PAGE: " + counter);
 				reader.close();
@@ -234,7 +233,6 @@ public class PhotoExtractor {
 		String [] tokens2 = tokens1[1].split(delimiter2);
 			
 		containerValue = tokens2[0];
-	
 		jsFile = "https://instagram.com/static/bundles/metro/ProfilePageContainer.js/" + containerValue + ".js";
 	}
 		
@@ -323,6 +321,8 @@ public class PhotoExtractor {
 			}
 			i++;	
 		}
+		System.out.println("\n--- RETRIEVING IMAGES --- ");
+		reader.close();
 	}
 	
 	// readFileJSON: Reads JSON and parses for .jpg links; adds downloadable links to queue data structure 
@@ -375,7 +375,6 @@ public class PhotoExtractor {
 			i++;	
 		}
 		System.out.println("\n--- RETRIEVING IMAGES --- ");
-//		System.out.println("TOTAL IMAGES: " + jsonLinks.size());		*** TAKE THIS OUT ***
 		reader.close();
 	}
 	
@@ -397,16 +396,14 @@ public class PhotoExtractor {
 				
 			}	
 		}
-//		System.out.println("--- RETRIEVING IMAGES --- ");
-//		System.out.println("TOTAL IMAGES: " + htmlLinks.size());	*** TAKE THIS OUT ***			
+	
 	}	
 		
 	// readLinks: Reads links from array and outputs as a JPG file
 	public static void readLinks() throws Exception {
-		int len = 0;												// **
-		int count = 1;												// **
+		int len = 0;												
+		int count = 1;												
 		ProgressBar progressBar = new ProgressBar();
-//		System.out.println("\n*** LINKS ***\n");					*** THIS HAS TO COME OUT ***
 		// read links
 		try {
 			if(!htmlLinks.isEmpty()) {		// reads data structures -- HTML
@@ -420,15 +417,17 @@ public class PhotoExtractor {
 						fileExists = lastImage();
 						readLast = true;
 						if(fileExists == true) {			// update file with new image link
+							System.out.println("*** Previous session found ***");
 							System.out.println("\n--- RETRIEVING LATEST IMAGES --- ");
 							updateFile();
 						}
 					}
 					if(imageName.contains(filename) == true) {	// 	 checks filename against imagefile					
 						imageDuplicate = true;
+						count = len;
+						progressBar.display(len, count);
 						break;
 					} else {
-//						System.out.println("READ: " + htmlLinks.pop());			*** THIS HAS TO COME OUT ***
 						InputStream istream = url.openStream();					
 						FileOutputStream out = new FileOutputStream(new File(path + filename));
 						istream.transferTo(out);
@@ -436,10 +435,10 @@ public class PhotoExtractor {
 						out.close();
 					}
 					progressBar.display(len, count);
-					count++;												// **
+					count++;												
 				}
 			} else {	
-				len = jsonLinks.size();									// **		
+				len = jsonLinks.size();										
 				while(!jsonLinks.isEmpty()) {
 					URL url = new URL(jsonLinks.peek());
 					String tempLink = jsonLinks.pop();
@@ -448,11 +447,11 @@ public class PhotoExtractor {
 						lastImage();
 						readLast = true;
 					}
-					if(imageName.contains(filename) == true) {	// 						
+					if(imageName.contains(filename) == true) {							
 						imageDuplicate = true;
+						progressBar.display(len, count);
 						break;
 					} else {
-//						System.out.println("READ: " + htmlLinks.pop());			*** THIS HAS TO COME OUT ***
 						InputStream istream = url.openStream();
 						FileOutputStream out = new FileOutputStream(new File(path + filename));
 						istream.transferTo(out);
@@ -460,7 +459,7 @@ public class PhotoExtractor {
 						out.close();
 					}
 					progressBar.display(len, count);
-					count++;												// **
+					count++;												
 				}
 			}
 		} catch (IOException ex) {
