@@ -10,34 +10,30 @@ public class ProgressBar {
 		
 	}
 	
-	public void displayBar(int len, int count) throws Exception {	
+	public void display(int len, int count) throws Exception {	
 		StringBuilder s = new StringBuilder("[                                                  ]");
-		while(count < 50) {
-			if(count < len * 0.33) {
-				for(int i = 1; i < 17; i++) {
+			if(count <= len * 0.25) {
+				for(int i = 1; i < 12; i++) {
 					s = s.replace(i, i + 1, "=");
 				}
-				System.out.print(s + " 33% \r");
-			} else if(count > len * 0.33 && count < len * 0.66) {
-				for(int i = 1; i < 35; i++) {
+				System.out.print(s + " 25% \r");
+			} else if(count >= len * 0.25 && count <= len * 0.50) {
+				for(int i = 1; i < 25; i++) {
 					s = s.replace(i, i + 1, "=");
 				}
-				System.out.print(s + " 66% \r");
-			} else if(count > len * 0.66 && count < len * 0.99) {
-				for(int i = 1; i < 49; i++) {
+				System.out.print(s + " 50% \r");
+			} else if(count >= len * 0.50 && count <= len * 0.75) {
+				for(int i = 1; i < 37; i++) {
 					s = s.replace(i, i + 1, "=");
 				}
-				System.out.print(s + " 99% \r");
+				System.out.print(s + " 75% \r");
 				
 			} else {
 				for(int i = 1; i < s.length() - 1; i++) {
 					s = s.replace(i, i + 1, "=");
 				}
 				System.out.print(s + " 100% \r");
-				break;
 			}
-			count++;
-		}
 	}
 
 }
