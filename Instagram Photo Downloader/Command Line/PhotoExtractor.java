@@ -325,8 +325,6 @@ public class PhotoExtractor {
 		}
 	}
 	
-	
-
 	// readFileJSON: Reads JSON and parses for .jpg links; adds downloadable links to queue data structure 
 	public static void readFileJSON(URL url) throws Exception {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
@@ -404,11 +402,15 @@ public class PhotoExtractor {
 	}	
 		
 	// readLinks: Reads links from array and outputs as a JPG file
-	public static void readLinks() throws Exception {		
+	public static void readLinks() throws Exception {
+		int len = 0;												// **
+		int count = 1;												// **
+		ProgressBar bar = new ProgressBar();
 //		System.out.println("\n*** LINKS ***\n");					*** THIS HAS TO COME OUT ***
 		// read links
 		try {
 			if(!htmlLinks.isEmpty()) {		// reads data structures -- HTML
+				len = htmlLinks.size();
 				while(!htmlLinks.isEmpty()) {
 					URL url = new URL(htmlLinks.peek());
 					String tempLink = htmlLinks.pop();  // save link to string
@@ -433,9 +435,12 @@ public class PhotoExtractor {
 						num++;
 						out.close();
 					}
+					bar.displayBar(len, count);
+					count++;												// **
 				}
 			} else {	
 				while(!jsonLinks.isEmpty()) {
+					len = jsonLinks.size();									// **				
 					URL url = new URL(jsonLinks.peek());
 					String tempLink = jsonLinks.pop();
 					getFilename(tempLink);
@@ -454,7 +459,8 @@ public class PhotoExtractor {
 						num++;
 						out.close();
 					}
-					
+					bar.displayBar(len, count);
+					count++;												// **
 				}
 			}
 		} catch (IOException ex) {
