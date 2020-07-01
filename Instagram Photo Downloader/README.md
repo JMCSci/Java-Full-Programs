@@ -13,4 +13,4 @@ There are two versions of this program:
 
 -***If all images do not save, try downloading at a lower resolution***  
 
-Updated -  06/30/20 -- Added the ability to only download the most recent images.
+Updated -  06/30/20 -- Added the ability to only download the most recent images (Command Line Version).
