@@ -15,5 +15,8 @@ There are two versions of this program:
 
 
 -***If all images do not save, try downloading at a lower resolution***  
+
+<p align="center"><img src=https://user-images.githubusercontent.com/40440123/86410353-a3543380-bc88-11ea-955d-ebbc9138b53e.gif
+></p>
  
  
