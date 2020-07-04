@@ -9,7 +9,7 @@ Program utilizes multithreading and various data structures.
 Command line version contains the latest features. 
 
 There are two versions of this program: 
-- Command line version - Windows or Mac
+- Command line version
 - GUI version (JavaFX 14)
 
 
