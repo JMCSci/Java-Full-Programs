@@ -72,7 +72,7 @@ public class ParseJSON {
 	
 	// extractQueryHash: Extracts query id/hash from .js file -- only run once (at beginning from js file)
 	void extractQueryHash(String javascript) throws Exception {
-		String delimiter1 = "pagination},queryId:\"";
+		String delimiter1 = "void 0:s.pagination},queryId:\"";
 		String delimiter2 = "\"";
 			
 		String [] tokens1 = javascript.split(delimiter1);
@@ -139,6 +139,10 @@ public class ParseJSON {
 	// getQueryURL: Getter for generated URL
 	void setQueryURL(String value) {
 		queryURL = value;
+	}
+	
+	void setNextPage(boolean newValue) {
+		hasNextPage = newValue;
 	}
 	
 	// setHasNextPage: Setter for hasNextPage -- only used once in initialRequest method
