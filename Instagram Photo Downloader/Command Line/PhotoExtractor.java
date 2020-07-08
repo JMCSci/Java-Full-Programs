@@ -226,14 +226,14 @@ public class PhotoExtractor {
 	
 	// extractContainerPage: Parse HTML for .js file containing query hash -- found in HTML document
 	public static void extractPageContainer(ParseJSON parseJSON) throws Exception {
-		String delimiter1 = "\"/static/bundles/metro/ConsumerLibCommons.js/"; 
+		String delimiter1 = "\"/static/bundles/metro/ProfilePageContainer.js/";
 		String delimiter2 = ".js\"";
 			
 		String [] tokens1 = page.split(delimiter1);
 		String [] tokens2 = tokens1[1].split(delimiter2);
 			
 		containerValue = tokens2[0]; 
-		jsFile = "https://instagram.com/static/bundles/metro/ConsumerLibCommons.js/" + containerValue + ".js";
+		jsFile = "https://instagram.com/static/bundles/metro/ProfilePageContainer.js/" + containerValue + ".js";
 	}
 		
 	// readJS: Reads Javascript file (.js) to string variable
