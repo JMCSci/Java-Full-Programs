@@ -482,16 +482,16 @@ public class PhotoExtractor {
 	/* This method is only used once */
 	public static boolean lastImage() throws Exception {
 		// if lastImage file does not exist, create it and add the name of first image read
-		File file = new File(path + "log.dat");
+		File file = new File(path + "log.bin");
 		if(file.exists() == true) {
-			FileInputStream in = new FileInputStream(path + "log.dat");
+			FileInputStream in = new FileInputStream(path + "log.bin");
 			byte [] sByte = new byte [filename.length()];		// length of the filename (for now)
 			in.read(sByte);
 			imageName = new String(sByte);						// save image name to variable
 			in.close();
 			return true;
 		} else {
-			FileOutputStream out = new FileOutputStream(path + "log.dat");
+			FileOutputStream out = new FileOutputStream(path + "log.bin");
 			byte [] sByte = new byte [filename.length()];
 			sByte = filename.getBytes();
 			out.write(sByte);
@@ -502,7 +502,7 @@ public class PhotoExtractor {
 	
 	// overwriteFile: Overwrites file with last saved image -- save point
 	public static void updateFile() throws Exception {
-		FileOutputStream out = new FileOutputStream(path + "log.dat");
+		FileOutputStream out = new FileOutputStream(path + "log.bin");
 		byte [] sByte = new byte [filename.length()];
 		sByte = filename.getBytes();
 		out.write(sByte);
